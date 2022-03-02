@@ -32,7 +32,26 @@ order by spid;
 select * from 	sys.dm_pdw_nodes_exec_text_query_plan where pdw_node_id=<id> and session_id=<session number>
 
 
+
 --STEP 4: 
+--To get the actual execution plan for the distributed query run the below.
+--Remember, there are 60 distributions, so on a busy system, this may be a lot of data. Isolate the user query.
+--Then select a plan and save it as a .sqlplan, then copy it to ssms and view the graphical distributed plan. 
+--Check the operations on the long running query, does it look valid and what you expected. 
+--Confirm if there are any invalid joins or if the estimated rows are off.
+select querystatistcs.pdw_node_id, querystatistcs.request_id  ,  querystatistcs.sql_handle  ,  querystatistcs.query_plan  ,  noneexecsqltxt.text,
+noneexecsqltxt.session_id  ,  pwsess.status  ,  pwsess.request_id  ,  pwsess.login_time  , pwsess.app_name,
+pwsess.login_name, SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) AS 'requestID'
+from  sys.dm_pdw_nodes_exec_query_statistics_xml querystatistcs
+left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
+on noneexecsqltxt.sql_handle=querystatistcs.sql_handle
+and noneexecsqltxt.session_id=querystatistcs.session_id
+left join sys.dm_pdw_exec_sessions pwsess
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) 
+
+
+--STEP 4a: 
+--If you want to get a spcific plan. 
 --To get the plan for the distributed query run the following.
 --Check the join operation on the long running query, does it look valid. 
 --Confirm if there are any invalid joins or if the estimated rows are off.
@@ -69,13 +88,26 @@ FROM   sys.dm_pdw_waits waits
 ORDER BY waits.object_name, waits.object_type, waits.state;
 
 
+--STEP 6a: 
+--Is this a runaway query. Check the amount of data the query is processing. 
+--Remember, on a busy system you may have to add additional where conditions to reduce the volume of data.
+select queryprofiles.session_id, pwsess.login_name, SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) AS 'requestID', queryprofiles.sql_handle, queryprofiles.physical_operator_name, queryprofiles.node_id, queryprofiles.row_count, queryprofiles.rewind_count, 
+queryprofiles.rebind_count, queryprofiles.end_of_scan_count, queryprofiles.estimate_row_count, queryprofiles.elapsed_time_ms, 
+noneexecsqltxt.text
+from sys.dm_pdw_nodes_exec_query_profiles  queryprofiles
+left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
+on noneexecsqltxt.sql_handle=queryprofiles.sql_handle
+and noneexecsqltxt.session_id=queryprofiles.session_id
+left join sys.dm_pdw_exec_sessions pwsess
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) 
+
+
 --STEP 7: 
 --Verify if there are any table skewed in a specific distribution.
 SELECT *
 FROM sys.dm_pdw_dms_workers
 WHERE request_id = @QIDINFO --Place your request_id here
 AND step_index = <stepIDHere>; --Place your step_index ID here
-
 
 
 --STEP 8: 
