@@ -10,7 +10,7 @@ order by submit_time desc;
 --Reference: https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-pdw-exec-requests-transact-sql?view=aps-pdw-2016-au7
 
 
-***Only enable during diagnotist as it caseus overhead***
+***Only enable during diagnostics as it causes overhead***
 --Verify the current state of Query Store in Synapse SQL Pool.
 select * from sys.database_query_store_options;
 
