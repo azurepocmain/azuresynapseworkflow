@@ -19,7 +19,7 @@ by RequestId
 | join kind=leftouter (
 SynapseSessionDW_CL
 |where isnotnull(Login_Name_s)
-| project Login_Name_s, RequestId_s
+| project Login_Name_s, RequestId_s, result_cache_hit_d
 )
 on $left.RequestId==$right.RequestId_s
 
