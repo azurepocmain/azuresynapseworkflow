@@ -1,0 +1,94 @@
+//Query run times with join to SynapseSessionDW_CL table to get username info. 
+//Please add the server name in the variable please note that this will be case sensitive.  
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
+AzureDiagnostics
+| where Category == 'ExecRequests'
+| where LogicalServerName_s == AzuresynapseDW
+| where StatementType_s !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+Start_Time=max(StartTime_t),
+End_Time=max(EndTime_t),
+Command=max(Command_s),
+Last_Status=min(Status_s),
+Statement_Type=max(StatementType_s),
+Resource_class=max(ResourceClass_s)
+by RequestId_s
+| extend elapsedTime_min = (case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(Start_Time =='1/1/1601, 12:00:00.000 AM', now(),Start_Time ))/1m
+| where elapsedTime_min > 1
+| order by elapsedTime_min desc
+| join kind=leftouter (
+SynapseSessionDW_CL
+|where isnotnull(Login_Name_s)
+| project Login_Name_s, RequestId_s
+)
+on $left.RequestId_s==$right.RequestId_s
+
+
+//Same as the above without the join. 
+//Please add the server name in the variable please note that this will be case sensitive.  
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
+AzureDiagnostics
+| where Category == 'ExecRequests'
+| where LogicalServerName_s == AzuresynapseDW
+| where StatementType_s !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+Start_Time=max(StartTime_t),
+End_Time=max(EndTime_t),
+Command=max(Command_s),
+Last_Status=min(Status_s),
+Statement_Type=max(StatementType_s),
+Resource_class=max(ResourceClass_s)
+by RequestId_s
+| extend elapsedTime_min = (case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(Start_Time =='1/1/1601, 12:00:00.000 AM', now(),Start_Time ))/1m
+| where elapsedTime_min > 1
+| order by elapsedTime_min desc
+
+
+//Session record processed with join on username. 
+let AzuresynapseDW = 'servernameherelowercase';   //<--add server name lower case here. 
+AzureDiagnostics
+| where Category  == 'RequestSteps'
+| where LogicalServerName_s  == AzuresynapseDW
+| where RowCount_d > 1
+| project  TimeGenerated,LogicalServerName_s, RequestId_s, StepIndex_d, RowCount_d, Command_s
+| order  by RowCount_d desc  
+| join kind=leftouter (
+SynapseSessionDW_CL
+|where isnotnull(Login_Name_s)
+| project Login_Name_s, RequestId_s
+)
+on $left.RequestId_s==$right.RequestId_s
+
+
+//Same as the above without the join
+let AzuresynapseDW = 'servernameherelowercase'; //<--add server name lower case here. 
+AzureDiagnostics
+| where Category  == 'RequestSteps'
+| where LogicalServerName_s  == AzuresynapseDW
+| where RowCount_d > 1
+| project  TimeGenerated,LogicalServerName_s, RequestId_s, StepIndex_d, RowCount_d, Command_s
+| order  by RowCount_d desc  
+
+//The below will work on both formerly SQL DW & a SQL Pool created in the Workspace. 
+
+//Custom table using API Call to get session level waits
+SynapseWaitsDW_CL
+| project TimeGenerated, session_id_s, Login_Name_s, request_id_s, Login_Time_t, command_s, status_s, type_s, state_s, object_type_s
+
+
+//Custom table using API Call to get tempdb usage
+SynapseTempDBDW_CL 
+| project  TimeGenerated,request_id_s, LoginName_s, session_id_d, submit_time_t, start_time_t, command_s, Space_Allocated_For_User_Objects_KB_d, Space_Deallocated_For_User_Objects_KB_d, Space_Allocated_For_Internal_Objects_KB_d, Space_Deallocated_For_Internal_Objects_KB_d, MemoryUsage_in_KB_d, SessionType_s
+
+
+//Custom table using API Call to get memory usage
+SynapseMemoryDW_CL 
+| project TimeGenerated, session_id_d, dop_d, request_id_d, grant_time_t, requested_memory_kb_d, required_memory_kb_d, used_memory_kb_d, max_used_memory_kb_d, query_cost_d, sql_handle_s, text_s, login_name_s
+
+
+
+
+
+
+
+
