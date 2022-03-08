@@ -50,12 +50,12 @@ AzureDiagnostics
 | where Category  == 'RequestSteps'
 | where LogicalServerName_s  == AzuresynapseDW
 | where RowCount_d > 1
-| project  TimeGenerated,LogicalServerName_s, RequestId_s, StepIndex_d, RowCount_d, Command_s
+| project  TimeGenerated,LogicalServerName_s, RequestId_s, StepIndex_d, RowCount_d
 | order  by RowCount_d desc  
 | join kind=leftouter (
 SynapseSessionDW_CL
 |where isnotnull(Login_Name_s)
-| project Login_Name_s, RequestId_s
+| project Login_Name_s, RequestId_s, Command_s
 )
 on $left.RequestId_s==$right.RequestId_s
 
