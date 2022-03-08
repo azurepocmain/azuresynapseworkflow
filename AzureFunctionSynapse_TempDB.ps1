@@ -199,7 +199,7 @@ $SqlConnection.Close()
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object request_id, loginName, session_id, submit_time,   start_time, end_time,  command, total_elapsed_time, Space_Allocated_For_User_Objects_KB, Space_Deallocated_For_User_Objects_KB, Space_Allocated_For_Internal_Objects_KB, Space_Deallocated_For_Internal_Objects_KB, MemoryUsage_in_KB, SessionType, RowCount  |ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object request_id, loginName, session_id, submit_time,   start_time, end_time,  command,  Space_Allocated_For_User_Objects_KB, Space_Deallocated_For_User_Objects_KB, Space_Allocated_For_Internal_Objects_KB, Space_Deallocated_For_Internal_Objects_KB, MemoryUsage_in_KB, SessionType, RowCount  |ConvertTo-Json
 
 
 
