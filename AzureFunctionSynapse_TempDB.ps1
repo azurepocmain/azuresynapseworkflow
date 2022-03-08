@@ -1,29 +1,45 @@
+# Input bindings are passed in via param block.
+
+param($Timer)
+
+ 
+
+# Get the current universal time in the default string format.
+
+$currentUTCtime = (Get-Date).ToUniversalTime()
+
+ 
+
+# The 'IsPastDue' property is 'true' when the current function invocation is later than scheduled.
+
+if ($Timer.IsPastDue) {
+
+Write-Host "PowerShell timer is running late!"
+
+}
+
+ 
+
+# Write an information log with the current time.
+
+Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
+
  
 
 try {
-
-
-
-
-$dwdb1=Get-AutomationVariable -Name 'dwdb1'
-$SQLDW=Get-AutomationVariable -Name 'AzureSynapse1'
-$workspaceidsynapse1=Get-AutomationVariable -Name 'workspaceidsynapse1'
-$workspacekeysynapse=Get-AutomationVariable -Name 'workspacekeysynapse'
-
-
 
 ###Context no longer needed as we will get the Synapse SQL Pool instance name from the config parameter.###
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
 
-#$SQLDW=@($env:AzureSynapse1);
+$SQLDW=@($env:AzureSynapse1);
 
 
 ##You can remove the below in Prod if you like after testing#####
 
 Write-Host $SQLDW
 
-
+Write-Host $env:dwdb2
 
 ##Write-Host $env:azpocsub
 
@@ -42,7 +58,6 @@ Write-Host $SQLDW
 
  
 
-
 $resourceURI = "https://database.windows.net/"
 
 $tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
@@ -53,13 +68,13 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
 
 $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT `
+$SqlCmd.CommandText = " SELECT `
  Count(1) AS TOTAL  `
 FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
     INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id `
@@ -71,7 +86,8 @@ WHERE DB_NAME(ssu.database_id) = 'tempdb' `
 AND exr.end_time IS  NULL `
     AND es.session_id <> @@SPID `
     AND es.login_name <> 'sa'`
-	AND  (ssu.user_objects_alloc_page_count * 8)  IS NOT NULL; "
+	AND  (ssu.user_objects_alloc_page_count * 8)  IS NOT NULL;  `
+    AND es.login_name <> 'sa' ;"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -88,7 +104,6 @@ $SqlConnection.Close()
 $SynapseTempDB=($DataSet.Tables[0]).TOTAL
 
 
-
  
 
 
@@ -98,13 +113,13 @@ if ($SynapseTempDB -ge 1)
 
 # Replace with your Workspace ID From Log Analytics
 
-$CustomerId = $workspaceidsynapse1
+$CustomerId = $env:workspaceidsynapse2
 
  
 
 # Replace with your Primary Key From Log Analytics
 
-$SharedKey = $workspacekeysynapse
+$SharedKey = $env:workspacekeysynapse2
 
  
 
@@ -131,7 +146,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -189,8 +204,6 @@ $SynapsePOC=$dataset | Select-Object request_id, loginName, session_id, submit_t
 
 
 
-
-
 # Create the function to create the authorization signature
 
 Function Build-Signature ($customerId, $sharedKey, $date, $contentLength, $method, $contentType, $resource)
@@ -243,7 +256,9 @@ $signature = Build-Signature `
 -method $method `
 -contentType $contentType `
 -resource $resource
+
 $uri = "https://" + $customerId + ".ods.opinsights.azure.com" + $resource + "?api-version=2016-04-01"
+
  
 
 $headers = @{
