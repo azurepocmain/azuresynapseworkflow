@@ -32,7 +32,7 @@ try {
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
 
-$SQLDW=@($env:AzureSynapse1);
+$SQLDW=@($env:AzureSynapse2);
 
 
 ##You can remove the below in Prod if you like after testing#####
@@ -85,9 +85,8 @@ FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
 WHERE DB_NAME(ssu.database_id) = 'tempdb' `
 AND exr.end_time IS  NULL `
     AND es.session_id <> @@SPID `
-    AND es.login_name <> 'sa'`
-	AND  (ssu.user_objects_alloc_page_count * 8)  IS NOT NULL;  `
-    AND es.login_name <> 'sa' ;"
+    AND es.login_name <> 'sa' `
+	AND  (ssu.user_objects_alloc_page_count * 8)  IS NOT NULL;"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -181,7 +180,7 @@ FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
 WHERE DB_NAME(ssu.database_id) = 'tempdb' `
 AND exr.end_time IS  NULL `
     AND es.session_id <> @@SPID `
-    AND es.login_name <> 'sa'`
+    AND es.login_name <> 'sa' `
 	AND  (ssu.user_objects_alloc_page_count * 8)  IS NOT NULL; "
 
 $SqlCmd.Connection = $SqlConnection
@@ -207,41 +206,23 @@ $SynapsePOC=$dataset | Select-Object request_id, loginName, session_id, submit_t
 # Create the function to create the authorization signature
 
 Function Build-Signature ($customerId, $sharedKey, $date, $contentLength, $method, $contentType, $resource)
-
 {
-
 $xHeaders = "x-ms-date:" + $date
-
 $stringToHash = $method + "`n" + $contentLength + "`n" + $contentType + "`n" + $xHeaders + "`n" + $resource
-
- 
-
 $bytesToHash = [Text.Encoding]::UTF8.GetBytes($stringToHash)
-
 $keyBytes = [Convert]::FromBase64String($sharedKey)
-
- 
-
 $sha256 = New-Object System.Security.Cryptography.HMACSHA256
-
 $sha256.Key = $keyBytes
-
 $calculatedHash = $sha256.ComputeHash($bytesToHash)
-
 $encodedHash = [Convert]::ToBase64String($calculatedHash)
-
 $authorization = 'SharedKey {0}:{1}' -f $customerId,$encodedHash
-
 return $authorization
-
 }
 
 
 
 # Create the function to create and post the request
-
 Function Post-LogAnalyticsData($customerId, $sharedKey, $body, $logType)
-
 {
 $method = "POST"
 $contentType = "application/json"
@@ -262,21 +243,15 @@ $uri = "https://" + $customerId + ".ods.opinsights.azure.com" + $resource + "?ap
  
 
 $headers = @{
-
 "Authorization" = $signature;
-
 "Log-Type" = $logType;
-
 "x-ms-date" = $rfc1123date;
-
 "time-generated-field" = $TimeStampField;
-
 }
 
  
 
 $response = Invoke-WebRequest -Uri $uri -Method $method -ContentType $contentType -Headers $headers -Body $body -UseBasicParsing
-
 return $response.StatusCode
 
  
