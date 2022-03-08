@@ -46,7 +46,7 @@ by RequestId
 
 
 //Session record processed with join on username. 
-let AzuresynapseDW = 'azuresynwkspace';  //<--add server name lower case here. 
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
 SynapseSqlPoolRequestSteps
 | where Category  == 'RequestSteps'
 | where LogicalServerName  == AzuresynapseDW
@@ -62,7 +62,7 @@ on $left.RequestId==$right.RequestId_s
 
 
 //Same as the above without the join
-let AzuresynapseDW = 'azuresynwkspace';  //<--add server name lower case here. 
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
 SynapseSqlPoolRequestSteps
 | where Category  == 'RequestSteps'
 | where LogicalServerName  == AzuresynapseDW
