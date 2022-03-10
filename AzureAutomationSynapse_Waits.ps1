@@ -134,6 +134,8 @@ waits.request_id,  `
 requests.command,   `
 requests.status,  `
 requests.start_time,  `
+waits.request_time,  `
+waits.acquire_time, `
 waits.type,  `
 waits.state,  `
 waits.object_type,  `
@@ -161,7 +163,7 @@ $SqlConnection.Close()
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object session_id, Login_Name, request_id, Login_Time,  command, status, start_time, type, state, object_type, object_name    |ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object session_id, Login_Name, request_time, request_id, acquire_time, Login_Time,  command, status, start_time, type, state, object_type, object_name    |ConvertTo-Json
 
 
 
