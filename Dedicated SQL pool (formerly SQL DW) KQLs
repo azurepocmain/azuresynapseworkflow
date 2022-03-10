@@ -86,7 +86,10 @@ SynapseMemoryDW_CL
 | project TimeGenerated, session_id_d, dop_d, request_id_d, grant_time_t, requested_memory_kb_d, required_memory_kb_d, used_memory_kb_d, max_used_memory_kb_d, query_cost_d, sql_handle_s, text_s, login_name_s
 
 
-
+//Custom table using API Call to get stored procedure usage
+SynapseStoredProcDW_CL 
+| project TimeGenerated, trim('.0' ,replace_regex(tostring(object_id_d),',', '')) , execution_count_d, cached_time_t,  last_elapsed_time_d, total_elapsed_time_d,  max_worker_time_d,  total_physical_reads_d, min_physical_reads_d, max_physical_reads_d, total_num_physical_reads_d, last_physical_reads_d,  total_logical_writes_d, max_logical_writes_d, total_logical_reads_d, max_logical_reads_d, last_logical_reads_d, min_logical_reads_d,  total_spills_d   
+| project-rename object_id=Column1
 
 
 
