@@ -40,9 +40,9 @@ $SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=
 $SqlConnection.AccessToken = $AccessToken
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 $SqlCmd.CommandText = "select  Count(1) AS TOTAL `
-from sys.dm_pdw_nodes_exec_procedure_stats nodspstats `
-join sys.objects obj on obj.object_id=nodspstats.object_id `
-where nodspstats.last_execution_time >= DATEADD(minute,-5,getdate());"
+  from sys.dm_pdw_nodes_exec_procedure_stats nodspstats `
+where nodspstats.database_id<> '32767' `
+and nodspstats.last_execution_time >= DATEADD(minute,-5,getdate()); "
 $SqlCmd.Connection = $SqlConnection
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
 $SqlAdapter.SelectCommand = $SqlCmd
@@ -79,15 +79,15 @@ $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 $SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
 $SqlConnection.AccessToken = $AccessToken
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = "select object_name(nodspstats.object_id) AS 'Table Name', nodspstats.object_id, nodspstats.type_desc, `
-nodspstats.cached_time, nodspstats.last_execution_time, nodspstats.execution_count, nodspstats.total_worker_time, `
+$SqlCmd.CommandText = "select nodspstats.database_id, nodspstats.object_id, nodspstats.type_desc, `
+nodspstats.cached_time, nodspstats.last_execution_time, nodspstats.execution_count, nodspstats.total_worker_time,  `
 nodspstats.last_worker_time, nodspstats.max_worker_time, nodspstats.total_physical_reads, nodspstats.last_physical_reads, nodspstats.min_physical_reads, `
 nodspstats.max_physical_reads, nodspstats.total_logical_writes, nodspstats.max_logical_writes  , nodspstats.total_logical_reads  , nodspstats.last_logical_reads   , nodspstats.min_logical_reads, `
 nodspstats.max_logical_reads  , nodspstats.total_elapsed_time   , nodspstats.last_elapsed_time   , nodspstats.min_elapsed_time   , nodspstats.max_elapsed_time  , nodspstats.total_spills ,  nodspstats.last_spills, `
 nodspstats.min_spills  , nodspstats.max_spills   , nodspstats.total_num_physical_reads   , nodspstats.last_num_physical_reads   , nodspstats.min_num_physical_reads `
 from sys.dm_pdw_nodes_exec_procedure_stats nodspstats `
-join sys.objects obj on obj.object_id=nodspstats.object_id `
-where nodspstats.last_execution_time >= DATEADD(minute,-5,getdate()); "
+where nodspstats.database_id<> '32767' `
+and nodspstats.last_execution_time >= DATEADD(minute,-5,getdate()); "
 $SqlCmd.Connection = $SqlConnection
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
 $SqlAdapter.SelectCommand = $SqlCmd
@@ -96,7 +96,7 @@ $SqlAdapter.Fill($dataset)
 $SqlConnection.Close()
  
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
-$SynapsePOC=$dataset | Select-Object tablename, object_id, type_desc, cached_time,  last_execution_time ,  max_worker_time, total_physical_reads,  last_physical_reads, min_physical_reads, max_physical_reads, total_logical_writes,  max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, total_elapsed_time, last_elapsed_time,  total_spills, total_num_physical_reads |ConvertTo-Json 
+$SynapsePOC=$dataset | Select-Object  object_id, type_desc, execution_count, cached_time,  last_execution_time ,  max_worker_time, total_physical_reads,  last_physical_reads, min_physical_reads, max_physical_reads, total_logical_writes,  max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, total_elapsed_time, last_elapsed_time,  total_spills, total_num_physical_reads |ConvertTo-Json 
  
  
  
