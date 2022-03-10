@@ -73,7 +73,8 @@ AzureDiagnostics
 
 //Custom table using API Call to get session level waits
 SynapseWaitsDW_CL
-| project TimeGenerated, session_id_s, Login_Name_s, request_id_s, Login_Time_t, command_s, status_s, type_s, state_s, object_type_s
+| project  TimeGenerated, request_id_s, session_id_s, Login_Name_s, TimeGenerated-request_time_t , state_s, type_s, status_s, object_type_s, command_s, Login_Time_t
+| project-rename  waittime=Column1
 
 
 //Custom table using API Call to get tempdb usage
