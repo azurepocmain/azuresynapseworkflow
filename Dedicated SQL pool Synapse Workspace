@@ -94,3 +94,85 @@ SynapseStoredProcDW_CL
 | project TimeGenerated, trim('.0' ,replace_regex(tostring(object_id_d),',', '')) , execution_count_d, cached_time_t,  last_elapsed_time_d, total_elapsed_time_d,  max_worker_time_d,  total_physical_reads_d, min_physical_reads_d, max_physical_reads_d, total_num_physical_reads_d, last_physical_reads_d,  total_logical_writes_d, max_logical_writes_d, total_logical_reads_d, max_logical_reads_d, last_logical_reads_d, min_logical_reads_d,  total_spills_d   
 | project-rename object_id=Column1
 
+
+
+/////////////////////////////////////////////////Data Points Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
+
+
+//Total Waits
+SynapseWaitsDW_CL
+| summarize  TotalWaits=count() by type_s, request_id_s, TimeGenerated
+| render columnchart
+
+
+//Total Waits
+SynapseWaitsDW_CL
+| summarize  TotalWaits=count() by type_s, request_id_s, TimeGenerated
+| render timechart
+
+//Total Memory Used
+SynapseMemoryDW_CL 
+| summarize  sum(used_memory_kb_d) by request_id_d, TimeGenerated
+|render  timechart  
+
+//Total Memory Requested
+SynapseMemoryDW_CL 
+| summarize  sum(requested_memory_kb_d) by request_id_d, TimeGenerated
+|render  timechart  
+
+//Total Required Memory 
+SynapseMemoryDW_CL 
+| summarize  sum(requested_memory_kb_d) by request_id_d, TimeGenerated
+|render  timechart  
+
+
+//Total Store Procedures Executions
+SynapseStoredProcDW_CL
+ | summarize sum(execution_count_d) by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), TimeGenerated
+ | render columnchart   
+
+
+//Total Store Procedures Logical Reads
+ SynapseStoredProcDW_CL
+ | summarize sum( total_logical_reads_d) by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), TimeGenerated
+ | render columnchart   
+
+
+//Total Store Procedures Physical Reads
+  SynapseStoredProcDW_CL
+ | summarize sum( total_physical_reads_d) by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), TimeGenerated
+ | render columnchart   
+
+
+//Total Store Procedures TempDB Spills
+  SynapseStoredProcDW_CL
+ | summarize sum( total_spills_d) by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), TimeGenerated
+ | render columnchart   
+
+
+//Total Store Procedures Elapse Time
+ SynapseStoredProcDW_CL
+ | summarize sum(total_elapsed_time_d) by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), TimeGenerated
+ | render columnchart   
+
+
+//Total Request Records Returned
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
+SynapseSqlPoolRequestSteps
+| where Category  == 'RequestSteps'
+| where LogicalServerName  == AzuresynapseDW
+| where RowCount > 1
+| summarize  sum(RowCount) by  RequestId, TimeGenerated
+| render columnchart   
+
+//Total Duration For Request
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
+SynapseSqlPoolExecRequests
+| where Category == 'ExecRequests'
+| where LogicalServerName == AzuresynapseDW
+| where StatementType !in ('Batch','Execute')
+| summarize sum( elapsedTime_min = (case(EndTime =='1/1/1601, 12:00:00.000 AM', now(),EndTime) - case(StartTime =='1/1/1601, 12:00:00.000 AM', now(),StartTime ))/1m)
+by TimeGenerated, RequestId
+| render columnchart  
+
+
