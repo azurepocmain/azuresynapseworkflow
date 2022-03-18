@@ -92,7 +92,7 @@ SynapseStoredProcDW_CL
 | project TimeGenerated, trim('.0' ,replace_regex(tostring(object_id_d),',', '')) , execution_count_d, cached_time_t,  last_elapsed_time_d, total_elapsed_time_d,  max_worker_time_d,  total_physical_reads_d, min_physical_reads_d, max_physical_reads_d, total_num_physical_reads_d, last_physical_reads_d,  total_logical_writes_d, max_logical_writes_d, total_logical_reads_d, max_logical_reads_d, last_logical_reads_d, min_logical_reads_d,  total_spills_d   
 | project-rename object_id=Column1
 
-/////////////////////////////////////////////////Data Points Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////Data Point Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
 
 
 //Total Waits
