@@ -95,6 +95,12 @@ SynapseStoredProcDW_CL
 /////////////////////////////////////////////////Data Point Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
 
 
+//Total Waits by Request ID in seconds
+SynapseWaitsDW_CL
+| project request_id_s, TimeGenerated, datetime_diff('second', TimeGenerated,request_time_t)
+| project-rename  seconds=Column1
+| render columnchart
+
 //Total Waits
 SynapseWaitsDW_CL
 | summarize  TotalWaits=count() by type_s, request_id_s, TimeGenerated
