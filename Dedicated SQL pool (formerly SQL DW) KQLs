@@ -117,6 +117,18 @@ SynapseMemoryDW_CL
 | summarize  sum(used_memory_kb_d) by request_id_d, TimeGenerated
 |render  timechart  
 
+
+//Required memory in KB by user name
+SynapseMemoryDW_CL
+| project  login_name_s,  TimeGenerated, required_memory_kb_d
+| render columnchart
+
+//Requested memory in KB by user name
+SynapseMemoryDW_CL
+| project  login_name_s,  TimeGenerated, requested_memory_kb_d
+| render columnchart
+
+
 //Total Memory Requested
 SynapseMemoryDW_CL 
 | summarize  sum(requested_memory_kb_d) by request_id_d, TimeGenerated
