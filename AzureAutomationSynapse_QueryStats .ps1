@@ -126,7 +126,7 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "select sql_handle,plan_generation_num, creation_time,last_execution_time, execution_count, total_worker_time, last_worker_time `
+$SqlCmd.CommandText = "select sql_handle,plan_generation_num, creation_time,last_execution_time, execution_count, total_worker_time, last_worker_time, `
 total_physical_reads, last_physical_reads, min_physical_reads, max_physical_reads, total_logical_writes, last_logical_writes, `
 min_logical_writes, max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, `
 total_clr_time, total_elapsed_time, last_elapsed_time, min_elapsed_time, max_elapsed_time, total_rows, min_rows, max_rows, `
