@@ -60,7 +60,7 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL From sys.dm_pdw_nodes_exec_query_stats 
+$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL From sys.dm_pdw_nodes_exec_query_stats `
 where last_execution_time >=  DATEADD(minute,-5,getdate()); "
 
 $SqlCmd.Connection = $SqlConnection
