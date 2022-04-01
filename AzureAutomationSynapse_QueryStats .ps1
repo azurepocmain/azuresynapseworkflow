@@ -134,7 +134,7 @@ total_dop, min_dop, max_dop, total_grant_kb, last_grant_kb, max_grant_kb, total_
 max_used_grant_kb, total_ideal_grant_kb, last_ideal_grant_kb, min_ideal_grant_kb, max_ideal_grant_kb, total_reserved_threads, total_used_threads, `
 total_columnstore_segment_reads, total_columnstore_segment_skips, total_spills `
 From sys.dm_pdw_nodes_exec_query_stats `
-last_execution_time >=  DATEADD(minute,-5,getdate()); "
+where last_execution_time >=  DATEADD(minute,-5,getdate()); "
 
 $SqlCmd.Connection = $SqlConnection
 
