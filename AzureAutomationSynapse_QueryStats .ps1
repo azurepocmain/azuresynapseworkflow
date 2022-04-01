@@ -126,7 +126,7 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "select sql_handle,plan_generation_num, creation_time,last_execution_time, execution_count, total_worker_time, `
+$SqlCmd.CommandText = "select sql_handle,plan_generation_num, creation_time,last_execution_time, execution_count, total_worker_time, last_worker_time `
 total_physical_reads, last_physical_reads, min_physical_reads, max_physical_reads, total_logical_writes, last_logical_writes, `
 min_logical_writes, max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, `
 total_clr_time, total_elapsed_time, last_elapsed_time, min_elapsed_time, max_elapsed_time, total_rows, min_rows, max_rows, `
@@ -151,7 +151,7 @@ $SqlConnection.Close()
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object sql_handle, plan_generation_num, creation_time,  last_execution_time, execution_count, total_worker_time,  total_physical_reads,   last_physical_reads, min_physical_reads, max_physical_reads,  total_logical_writes, last_logical_writes, min_logical_writes,  max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, last_elapsed_time,  min_elapsed_time, max_elapsed_time, total_rows, min_rows, max_rows, max_used_grant_kb, total_ideal_grant_kb, last_ideal_grant_kb, min_ideal_grant_kb, max_ideal_grant_kb, total_reserved_threads, total_used_threads, total_columnstore_segment_reads, total_columnstore_segment_skips, total_spills   |ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object sql_handle, plan_generation_num, creation_time,  last_execution_time, execution_count, total_worker_time,  last_worker_time, total_physical_reads,   last_physical_reads, min_physical_reads, max_physical_reads,  total_logical_writes, last_logical_writes, min_logical_writes,  max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, last_elapsed_time,  min_elapsed_time, max_elapsed_time, total_rows, min_rows, max_rows, max_used_grant_kb, total_ideal_grant_kb, last_ideal_grant_kb, min_ideal_grant_kb, max_ideal_grant_kb, total_reserved_threads, total_used_threads, total_columnstore_segment_reads, total_columnstore_segment_skips, total_spills   |ConvertTo-Json
 
 
 
