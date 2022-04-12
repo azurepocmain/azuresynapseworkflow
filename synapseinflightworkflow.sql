@@ -41,13 +41,14 @@ select * from 	sys.dm_pdw_nodes_exec_text_query_plan where pdw_node_id=<id> and 
 --Confirm if there are any invalid joins or if the estimated rows are off.
 select querystatistcs.pdw_node_id, querystatistcs.request_id  ,  querystatistcs.sql_handle  ,  querystatistcs.query_plan  ,  noneexecsqltxt.text,
 noneexecsqltxt.session_id  ,  pwsess.status  ,  pwsess.request_id  ,  pwsess.login_time  , pwsess.app_name,
-pwsess.login_name, SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) AS 'requestID'
+pwsess.login_name, SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%set_distribute%', noneexecsqltxt.text )) AS 'requestID'
 from  sys.dm_pdw_nodes_exec_query_statistics_xml querystatistcs
 left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
 on noneexecsqltxt.sql_handle=querystatistcs.sql_handle
 and noneexecsqltxt.session_id=querystatistcs.session_id
 left join sys.dm_pdw_exec_sessions pwsess
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) 
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%set_distribute%', noneexecsqltxt.text )) 
+
 
 
 --STEP 4a: 
