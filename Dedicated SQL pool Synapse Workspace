@@ -95,6 +95,12 @@ SynapseStoredProcDW_CL
 | project-rename object_id=Column1
 
 
+//Custom table using API Call to get stored procedure usage in seconds for time and only top 20
+SynapseStoredProcDW_CL 
+| project TimeGenerated, trim('.0' ,replace_regex(tostring(object_id_d),',', '')) , execution_count_d, cached_time_t,  toint(last_elapsed_time_d/1000000),  toint(total_elapsed_time_d/1000000),   toint(max_worker_time_d/1000000),  total_physical_reads_d, min_physical_reads_d, max_physical_reads_d, total_num_physical_reads_d, last_physical_reads_d,  total_logical_writes_d, max_logical_writes_d, total_logical_reads_d, max_logical_reads_d, last_logical_reads_d, min_logical_reads_d,  total_spills_d   
+| project-rename object_id=Column1, last_elapsed_time_sec=Column2, total_elapsed_time_sec=Column3, max_worker_time_sec=Column4
+| order by total_elapsed_time_sec desc
+| take 20
 
 /////////////////////////////////////////////////Data Point Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
 
