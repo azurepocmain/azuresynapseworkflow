@@ -104,6 +104,56 @@ SynapseStoredProcDW_CL
 
 /////////////////////////////////////////////////Data Point Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
 
+//Total Waits by QID over time: 
+SynapseSqlPoolExecRequests
+| where Category == 'ExecRequests'
+| where LogicalServerName == AzuresynapseDW
+| where StatementType !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+StartTime=min(StartTime),
+End_Time=max(EndTime),
+Command=max(Command),
+Last_Status=min(Status),
+Statement_Type=max(StatementType),
+Resource_class=max(ResourceClass)
+by RequestId
+| join kind=leftouter  (SynapseWaitsDW_CL 
+| project  request_id_s, bin(TimeGenerated, 5m),  type_s, waittime=datetime_diff('minute', TimeGenerated,request_time_t))
+on $left.RequestId==$right.request_id_s 
+| extend bin(TimeGenerated, 5m), elapsedTime_min = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(StartTime =='1/1/1601, 12:00:00.000 AM', now(),StartTime ))/1m)-case( isnull(waittime), 0,waittime) , elapsedTime_min_check = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(StartTime =='1/1/1601, 12:00:00.000 AM', now(),StartTime ))/1m)
+| where waittime > 1
+| order  by elapsedTime_min_check desc 
+| extend elapsedTime_min, request_id_s, bin(TimeGenerated, 5m)
+| take 30
+| order by waittime desc 
+| render columnchart with ( kind=stacked )
+
+//Total runtime minus waits time only top 30 
+let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
+SynapseSqlPoolExecRequests
+| where Category == 'ExecRequests'
+| where LogicalServerName == AzuresynapseDW
+| where StatementType !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+StartTime=min(StartTime),
+End_Time=max(EndTime),
+Command=max(Command),
+Last_Status=min(Status),
+Statement_Type=max(StatementType),
+Resource_class=max(ResourceClass)
+by RequestId
+| join kind=leftouter  (SynapseWaitsDW_CL 
+| project  request_id_s, bin(TimeGenerated, 5m),  type_s, waittime=datetime_diff('minute', TimeGenerated,request_time_t))
+on $left.RequestId==$right.request_id_s 
+| extend bin(TimeGenerated, 5m), elapsedTime_min = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(StartTime =='1/1/1601, 12:00:00.000 AM', now(),StartTime ))/1m)-case( isnull(waittime), 0,waittime) , elapsedTime_min_check = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(StartTime =='1/1/1601, 12:00:00.000 AM', now(),StartTime ))/1m)
+| where elapsedTime_min_check > 1
+| order  by elapsedTime_min_check desc 
+| extend elapsedTime_min, request_id_s, bin(TimeGenerated, 5m)
+| take 30
+| order by elapsedTime_min desc 
+| project-away waittime
+| render columnchart with ( kind=stacked  )
+
 
 //Total Waits
 SynapseWaitsDW_CL
