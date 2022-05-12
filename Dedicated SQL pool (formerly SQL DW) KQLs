@@ -128,7 +128,7 @@ on $left.RequestId_s==$right.request_id_s
 | take 30
 | order by waittime desc 
 | render columnchart with ( kind=stacked )
-![image](https://user-images.githubusercontent.com/91505344/167975272-703d8673-e059-4826-93a9-8e763e887c5c.png)
+
 
 //Total Waits by Request ID in seconds
 SynapseWaitsDW_CL
