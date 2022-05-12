@@ -105,6 +105,30 @@ SynapseStoredProcDW_CL
 
 /////////////////////////////////////////////////Data Point Charts Section Below///////////////////////////////////////////////////////////////////////////////////////
 
+let AzuresynapseDW = 'ResourceNameHereAllCAPS';
+AzureDiagnostics
+| where Category == 'ExecRequests'
+| where Resource == AzuresynapseDW
+| where StatementType_s !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+SubmitTime=min(SubmitTime_t),
+End_Time=max(EndTime_t),
+Command=max(Command_s),
+Last_Status=min(Status_s),
+Statement_Type=max(StatementType_s),
+Resource_class=max(ResourceClass_s)
+by RequestId_s
+| join kind=leftouter  (SynapseWaitsDW_CL 
+| project  request_id_s, bin(TimeGenerated, 5m),  type_s, waittime=datetime_diff('minute', TimeGenerated,request_time_t))
+on $left.RequestId_s==$right.request_id_s 
+| extend bin(TimeGenerated, 5m), elapsedTime_min = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m)-case( isnull(waittime), 0,waittime) , elapsedTime_min_check = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m)
+| where waittime > 1
+| order  by elapsedTime_min_check desc 
+| extend elapsedTime_min, request_id_s, bin(TimeGenerated, 5m)
+| take 30
+| order by waittime desc 
+| render columnchart with ( kind=stacked )
+![image](https://user-images.githubusercontent.com/91505344/167975272-703d8673-e059-4826-93a9-8e763e887c5c.png)
 
 //Total Waits by Request ID in seconds
 SynapseWaitsDW_CL
