@@ -101,7 +101,7 @@ $SharedKey = $workspacekeysynapse
 
 # Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseMemoryDW table in the workspace to query
 
-$LogType = "SynapseMemoryDW"
+$LogType = "SynapseComputeWaitsDW"
 
 
 # You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
