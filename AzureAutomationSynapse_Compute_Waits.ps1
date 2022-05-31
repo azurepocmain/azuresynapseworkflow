@@ -99,7 +99,7 @@ $SharedKey = $workspacekeysynapse
 
  
 
-# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseMemoryDW table in the workspace to query
+# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseComputeWaitsDW table in the workspace to query
 
 $LogType = "SynapseComputeWaitsDW"
 
