@@ -77,7 +77,7 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 $SqlCmd.CommandText = "select count(1) AS TOTAL from sys.dm_pdw_nodes_exec_requests nodeexreq join `
 sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid `
 AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id join  sys.dm_pdw_exec_requests `
-execreq on execreq.request_id=sqlrequest.request_id where execreq.status='Running';  --session_id() check is not needed as DMV queries do not run on the compute level"
+execreq on execreq.request_id=sqlrequest.request_id where execreq.status='Running';  --session_id() check is not needed as DMV queries do not run on the compute level;"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -91,7 +91,7 @@ $SqlAdapter.Fill($dataset)
 
 $SqlConnection.Close()
 
-$SynapseComputeWait($DataSet.Tables[0]).TOTAL
+$SynapseComputeWait=($DataSet.Tables[0]).TOTAL
 
 
  
@@ -113,7 +113,7 @@ $SharedKey = $env:workspacekeysynapse2
 
  
 
-# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseMemoryDW table in the workspace to query
+# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseComputeWaitsDW table in the workspace to query
 
 $LogType = "SynapseComputeWaitsDW"
 
@@ -164,6 +164,8 @@ $SqlConnection.Close()
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
 $SynapsePOC=$dataset | Select-Object request_id, wait_time, total_elapsed_time,  reads, writes, logical_reads,  wait_type   |ConvertTo-Json
+
+
 
 
 
@@ -220,9 +222,7 @@ $signature = Build-Signature `
 -method $method `
 -contentType $contentType `
 -resource $resource
-
 $uri = "https://" + $customerId + ".ods.opinsights.azure.com" + $resource + "?api-version=2016-04-01"
-
  
 
 $headers = @{
