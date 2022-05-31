@@ -63,7 +63,7 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 $SqlCmd.CommandText = "select count(1) AS TOTAL from sys.dm_pdw_nodes_exec_requests nodeexreq join `
 sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid `
 AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id join  sys.dm_pdw_exec_requests `
-execreq on execreq.request_id=sqlrequest.request_id where execreq.status='Running';  --session_id() check is not needed as DMV queries do not run on the compute level"
+execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' );  --session_id() check is not needed as DMV queries do not run on the compute level"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -131,7 +131,7 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 $SqlCmd.CommandText = "select execreq.request_id, max(nodeexreq.wait_time) AS wait_time , max(nodeexreq.total_elapsed_time) AS total_elapsed_time, `
 max(nodeexreq.reads) AS reads, max(nodeexreq.writes) AS writes, max(nodeexreq.logical_reads) AS logical_reads, nodeexreq.wait_type `
 from sys.dm_pdw_nodes_exec_requests nodeexreq join  sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id `
-join  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id where execreq.status='Running' `
+join  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' ) `
 group by nodeexreq.wait_type,  execreq.request_id;"
 
 $SqlCmd.Connection = $SqlConnection
