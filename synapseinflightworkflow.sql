@@ -69,6 +69,16 @@ FROM sys.dm_pdw_sql_requests
 WHERE request_id = @QIDINFO --Place your request_id here
 AND step_index = <number> --Place your step_index ID here);
 
+
+--STEP 5a: 
+--Get a glimpse of the current compute level waits, logical reads, writes and statements that are being invoked.
+select execreq.request_id, max(nodeexreq.wait_time) AS wait_time , max(nodeexreq.total_elapsed_time) AS total_elapsed_time, 
+max(nodeexreq.reads) AS reads, max(nodeexreq.writes) AS writes, max(nodeexreq.logical_reads) AS logical_reads, nodeexreq.wait_type, execreq.command 
+from sys.dm_pdw_nodes_exec_requests nodeexreq join  sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id 
+join  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' ) 
+group by nodeexreq.wait_type,  execreq.request_id, execreq.command ;
+
+
 --STEP 6: 
 --If the session is in suspended state, verify if the issue is regarding concurrency slots.
 --Remember, different concurrency slots are aggregated to equal 100% of the overall concurrency slots available for that DWUc.
