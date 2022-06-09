@@ -11,6 +11,7 @@ try {
     $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspacekeysynapse'
 
 
+
 ###Context no longer needed as we will get the Synapse SQL Pool instance name from the config parameter.###
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
@@ -127,7 +128,7 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
 $SqlCmd.CommandText = "select   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) AS request_id, nomemgran.dop, nomemgran.request_time, nomemgran.grant_time, `
 nomemgran.requested_memory_kb,  required_memory_kb, nomemgran.used_memory_kb, nomemgran.max_used_memory_kb, nomemgran.query_cost, nomemgran.ideal_memory_kb, `
-nomemgran.sql_handle,  noneexecsqltxt.text `
+nomemgran.sql_handle,  noneexecsqltxt.text , pwsess.login_name `
 from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt `
 on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
 and noneexecsqltxt.session_id=nomemgran.session_id `
@@ -246,7 +247,7 @@ Post-LogAnalyticsData -customerId $customerId -sharedKey $sharedKey -body ([Syst
 
 $Exception = $_.Exception.Message
 
-###########Send Output of the exception###########
+###########Send Email of the exception###########
 
 Write-Error -Exception $Exception
 
