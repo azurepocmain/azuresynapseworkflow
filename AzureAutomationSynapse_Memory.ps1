@@ -11,8 +11,6 @@ try {
     $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspacekeysynapse'
 
 
-
-
 ###Context no longer needed as we will get the Synapse SQL Pool instance name from the config parameter.###
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
@@ -60,13 +58,9 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt `
-on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
-and noneexecsqltxt.session_id=nomemgran.session_id `
-left join sys.dm_pdw_exec_sessions pwsess `
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) --verify in large requst IDs this return results `
+$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran `
 where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) `
-AND pwsess.session_id<> session_id(); "
+HAVING  Count(1) >1;"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -131,16 +125,15 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "select  nomemgran.session_id, nomemgran.request_id, nomemgran.dop, nomemgran.request_time, nomemgran.grant_time, `
-nomemgran.requested_memory_kb,  required_memory_kb, nomemgran.used_memory_kb, nomemgran.max_used_memory_kb, nomemgran.query_cost, `
-nomemgran.sql_handle,  noneexecsqltxt.text, pwsess.login_name `
+$SqlCmd.CommandText = "select   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) AS request_id, nomemgran.dop, nomemgran.request_time, nomemgran.grant_time, `
+nomemgran.requested_memory_kb,  required_memory_kb, nomemgran.used_memory_kb, nomemgran.max_used_memory_kb, nomemgran.query_cost, nomemgran.ideal_memory_kb, `
+nomemgran.sql_handle,  noneexecsqltxt.text `
 from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt `
 on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
 and noneexecsqltxt.session_id=nomemgran.session_id `
 left join sys.dm_pdw_exec_sessions pwsess `
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) --verify in large requst IDs this return results `
-where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) `
-AND pwsess.session_id<> session_id();"
+on pwsess.request_id like    SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text ))`
+where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) "
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -157,8 +150,7 @@ $SqlConnection.Close()
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object session_id, dop, request_time,  grant_time, requested_memory_kb, granted_memory_kb,  required_memory_kb,   used_memory_kb, max_used_memory_kb, ideal_memory_kb,  query_cost, wait_time_ms, plan_handle,  sql_handle, request_id, step_index,pdw_node_id, distribution_id, status, start_time, end_time, text, login_name   |ConvertTo-Json
-
+$SynapsePOC=$dataset | Select-Object request_id, dop, request_time,  grant_time, requested_memory_kb,   required_memory_kb,   used_memory_kb, max_used_memory_kb, ideal_memory_kb,  query_cost,     login_name  | ConvertTo-Json
 
 
 
@@ -254,7 +246,7 @@ Post-LogAnalyticsData -customerId $customerId -sharedKey $sharedKey -body ([Syst
 
 $Exception = $_.Exception.Message
 
-###########Send Email of the exception###########
+###########Send Output of the exception###########
 
 Write-Error -Exception $Exception
 
