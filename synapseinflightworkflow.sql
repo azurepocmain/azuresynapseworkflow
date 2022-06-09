@@ -102,7 +102,8 @@ ORDER BY waits.object_name, waits.object_type, waits.state;
 --STEP 6a: 
 --Is this a runaway query. Check the amount of data the query is processing. 
 --Remember, on a busy system you may have to add additional where conditions to reduce the volume of data.
-select queryprofiles.session_id, pwsess.login_name, SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) AS 'requestID', queryprofiles.sql_handle, queryprofiles.physical_operator_name, queryprofiles.node_id, queryprofiles.row_count, queryprofiles.rewind_count, 
+--Updated to get proper QID, will only show QID for selects.
+select queryprofiles.session_id, pwsess.login_name, SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) AS 'requestID', queryprofiles.sql_handle, queryprofiles.physical_operator_name, queryprofiles.node_id, queryprofiles.row_count, queryprofiles.rewind_count, 
 queryprofiles.rebind_count, queryprofiles.end_of_scan_count, queryprofiles.estimate_row_count, queryprofiles.elapsed_time_ms, 
 noneexecsqltxt.text
 from sys.dm_pdw_nodes_exec_query_profiles  queryprofiles
@@ -110,7 +111,7 @@ left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
 on noneexecsqltxt.sql_handle=queryprofiles.sql_handle
 and noneexecsqltxt.session_id=queryprofiles.session_id
 left join sys.dm_pdw_exec_sessions pwsess
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%'',%', noneexecsqltxt.text )-41) 
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) 
 
 
 --STEP 7: 
