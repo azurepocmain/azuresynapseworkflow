@@ -4,6 +4,32 @@
 
 
 
+//Request run times
+SynapseSqlPoolExecRequests
+| where Category == 'ExecRequests'
+| where StatementType !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+Start_Time=max(StartTime),
+End_Time=max(EndTime),
+Command=max(Command),
+Last_Status=min(Status),
+Statement_Type=max(StatementType),
+Resource_class=max(ResourceClass),
+ExplainOutput=max(ExplainOutput)
+by RequestId
+| extend elapsedTime_min = (case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(Start_Time =='1/1/1601, 12:00:00.000 AM', now(),Start_Time ))/1m
+| where elapsedTime_min > 1
+| order by elapsedTime_min desc
+
+//Total row count 
+SynapseSqlPoolRequestSteps
+| where Category  == 'RequestSteps'
+| where RowCount > 1
+| project  TimeGenerated,LogicalServerName, RequestId, StepIndex, RowCount, Command
+| order  by RowCount desc  
+
+
+
 //Get the percentage of memory usage. Please note that you need to get the overall memory on your current systems DWU. You can use something like 
 // select * from sys.dm_pdw_nodes_resource_governor_resource_pools and get that info from the default pool max memory KB and add it into the second line replacing 55481872 both times 
 
