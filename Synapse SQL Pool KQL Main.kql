@@ -1,7 +1,7 @@
 //You can remove the top function from the commands to get the entire output. 
 //In addition, you can uncomment the last line to view the graphical representation in Log Analytics. 
 //If using Power BI, you can do not need the last line render column charts. 
-
+//Please note that if you are sending multiple synapse logs to the same workspace, you need to add the logical server name to the query to that results to not get mixed up
 
 
 //Request run times
@@ -50,10 +50,8 @@ SynapseStoredProcDW_CL
 
 
 //Request runtime over query ID over compute level waits
-let AzuresynapseDW = 'azuresynwkspace';
 SynapseSqlPoolExecRequests 
 | where Category == 'ExecRequests'
-| where LogicalServerName == AzuresynapseDW
 | where StatementType !in ('Batch','Execute')
 | summarize TimeGenerated=max(TimeGenerated),
 SubmitTime=min(StartTime),
