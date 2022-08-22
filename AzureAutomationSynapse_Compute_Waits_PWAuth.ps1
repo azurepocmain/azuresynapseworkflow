@@ -9,6 +9,7 @@ try {
     $SQLDW=Get-AutomationVariable -Name 'AzureSynapse1'
     $workspaceidsynapse1=Get-AutomationVariable -Name 'workspacekeysynapse'
     $workspacekeysynapse=Get-AutomationVariable -Name 'workspacekeysynapseencrypt'
+	$username=Get-AutomationVariable -Name 'SynapseUsername'
 	$password=Get-AutomationVariable -Name 'SynpaseSQLPW'
 
 
@@ -30,7 +31,7 @@ Write-Host $SQLDW
 
 ###You can use a foreach loop if there are multiple SQL DWs that require querying, you will have to set the instance and DB for every foreach call###
 
-###The below is using managed identity of the Azure Function, ensure correct permissions is provided to the function in the GRANT VIEW DATABASE STATE TO [functionnamehere]###
+###The below is using managed identity of the Azure Function, ensure correct permissions is provided to the function in the GRANT VIEW DATABASE STATE TO [automationnamehere]###
 
 ###Calls to synapse DW should not incur any concurrency slots of resource usage when querying  DMVs###
 
@@ -39,7 +40,7 @@ Write-Host $SQLDW
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=usernamehere;password=$password;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=$username;password=$password;"
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
@@ -98,7 +99,7 @@ $TimeStampField = ""
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=usernamehere;password=$password;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=$username;password=$password;"
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
