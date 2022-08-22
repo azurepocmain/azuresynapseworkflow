@@ -6,10 +6,12 @@ try {
 ##This code stack leverages Password authentication please ensure passwords are stored in secure location or encrypted.
 
 
-    $dwdb1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_database_name'
-    $SQLDW=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_instance_name'
-    $workspaceidsynapse1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspaceidsynapse'
-    $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspacekeysynapse'
+    $dwdb1=Get-AutomationVariable -Name 'dwdb1'
+    $SQLDW=Get-AutomationVariable -Name 'AzureSynapse1'
+    $workspaceidsynapse1=Get-AutomationVariable -Name 'workspacekeysynapse'
+    $workspacekeysynapse=Get-AutomationVariable -Name 'workspacekeysynapseencrypt'
+	$username=Get-AutomationVariable -Name 'SynapseUsername'
+	$password=Get-AutomationVariable -Name 'SynpaseSQLPW'
 
 ##You can remove the below in Prod if you like after testing#####
 
@@ -31,7 +33,7 @@ Write-Host $SQLDW
  
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=usernamehere;password=$password;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=$username;password=$password;"
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
@@ -88,7 +90,7 @@ $TimeStampField = ""
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=usernamehere;password=$password;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=$username;password=$password;"
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
