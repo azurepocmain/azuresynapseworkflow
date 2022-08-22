@@ -32,7 +32,7 @@ Write-Host $SQLDW
 
 ###You can use a foreach loop if there are multiple SQL DWs that require querying, you will have to set the instance and DB for every foreach call###
 
-###The below is using SQL Auth of the Azure Automation, ensure correct permissions is provided to the function in the GRANT VIEW DATABASE STATE TO [functionnamehere]###
+###The below is using SQL Auth of the Azure Automation, ensure correct permissions is provided to the function in the GRANT VIEW DATABASE STATE TO [automationnamehere]###
 
 ###Calls to synapse DW should not incur any concurrency slots of resource usage when quiring DMVs###
 
