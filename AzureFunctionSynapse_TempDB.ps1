@@ -52,7 +52,7 @@ Write-Host $env:dwdb2
 ###The below is using managed identity of the Azure Function, ensure correct permissions is provided to the function in the GRANT VIEW DATABASE STATE TO [functionnamehere]###
 
 ###Calls to synapse DW should not incur any concurrency slots of resource usage when quiring DMVs###
-
+##Please note that microsoft.vw_sql_requests is required: https://github.com/Microsoft/sql-data-warehouse-samples/blob/main/solutions/monitoring/scripts/views/microsoft.vw_sql_requests.sql
  
 
 
