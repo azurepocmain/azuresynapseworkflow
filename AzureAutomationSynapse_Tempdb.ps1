@@ -55,7 +55,7 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SSELECT Count(1) AS TOTAL `
+$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL `
 	FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
     INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id `
     INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id `
