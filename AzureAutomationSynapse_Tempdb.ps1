@@ -55,16 +55,20 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL `
-	FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
-    INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id `
-    INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id `
-    INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id `
-    LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id `
-    LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id `
-	WHERE DB_NAME(ssu.database_id) = 'tempdb' `
-    AND es.session_id <> @@SPID `
-    AND es.login_name <> 'sa'; "
+$SqlCmd.CommandText = "SELECT  Count(1) AS TOTAL `
+FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu  `
+INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id  `
+INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id  `
+INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id  `
+LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id  `
+LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id  `
+WHERE   `
+exr.end_time IS  NULL  `
+AND  `
+DB_NAME(ssu.database_id) = 'tempdb'  `
+AND exs.session_id <> session_id()  ` 
+AND es.login_name <> 'sa'  `
+AND  (ssu.user_objects_alloc_page_count * 8) <> 0 or (ssu.internal_objects_alloc_page_count * 8) <> 0; "
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -122,36 +126,39 @@ $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 $SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
 $SqlConnection.AccessToken = $AccessToken
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = "SELECT `
-	exr.submit_time, `
-	exr.start_time, `
-	exr.end_time,  `
-    sr.request_id, `
-    ssu.session_id, `
-    ssu.pdw_node_id, `
-    sr.command, `
-    sr.total_elapsed_time, `
-    exs.login_name AS 'LoginName', `
-    DB_NAME(ssu.database_id) AS 'DatabaseName', `
-    (es.memory_usage * 8) AS 'MemoryUsage_in_KB', `
-    (ssu.user_objects_alloc_page_count * 8) AS 'Space_Allocated_For_User_Objects_KB', `
-    (ssu.user_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_User_Objects_KB', `
-    (ssu.internal_objects_alloc_page_count * 8) AS 'Space_Allocated_For_Internal_Objects_KB', `
-    (ssu.internal_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_Internal_Objects_KB', `
-    CASE es.is_user_process `
-    WHEN 1 THEN 'User Session' `
-    WHEN 0 THEN 'System Session' `
-    END AS 'SessionType', `
-    es.row_count AS 'RowCount' `
-FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu `
-    INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id `
-    INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id `
-    INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id `
-    LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id `
-    LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id `
-WHERE DB_NAME(ssu.database_id) = 'tempdb' `
-    AND es.session_id <> @@SPID `
-    AND es.login_name <> 'sa';  "
+$SqlCmd.CommandText = "SELECT  `
+sr.request_id,  `
+ssu.session_id,  `
+ssu.pdw_node_id,  `
+        exr.submit_time,  `
+        exr.start_time,  `
+        exr.end_time,  `
+exr.command,  `
+sr.total_elapsed_time,  `
+exs.login_name AS 'loginName', ` 
+DB_NAME(ssu.database_id) AS 'DatabaseName', ` 
+   (ssu.user_objects_alloc_page_count * 8) AS 'Space_Allocated_For_User_Objects_KB',  `
+(ssu.user_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_User_Objects_KB',  `
+(ssu.internal_objects_alloc_page_count * 8) AS 'Space_Allocated_For_Internal_Objects_KB',  `
+(ssu.internal_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_Internal_Objects_KB',  `
+CASE es.is_user_process  `
+WHEN 1 THEN 'User Session'  `
+WHEN 0 THEN 'System Session'  `
+END AS 'SessionType',  `
+es.row_count AS 'RowCount'  `
+FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu  `
+INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id  `
+INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id  `
+INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id  `
+LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id  `
+LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id  `
+WHERE   `
+exr.end_time IS  NULL  `
+AND  `
+DB_NAME(ssu.database_id) = 'tempdb'  `
+AND exs.session_id <> session_id()   `
+AND es.login_name <> 'sa'  `
+AND  (ssu.user_objects_alloc_page_count * 8) <> 0 or (ssu.internal_objects_alloc_page_count * 8) <> 0;"
 
 $SqlCmd.Connection = $SqlConnection
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
