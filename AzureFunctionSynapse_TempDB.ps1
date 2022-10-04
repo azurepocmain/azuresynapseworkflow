@@ -85,7 +85,7 @@ WHERE   `
 exr.end_time IS  NULL  `
 AND  `
 DB_NAME(ssu.database_id) = 'tempdb'  `
-AND exs.session_id <> session_id()  ` 
+AND exs.session_id <> session_id()  `
 AND es.login_name <> 'sa'  `
 AND  (ssu.user_objects_alloc_page_count * 8) <> 0 or (ssu.internal_objects_alloc_page_count * 8) <> 0;"
 
@@ -161,8 +161,8 @@ ssu.pdw_node_id,  `
         exr.end_time,  `
 exr.command,  `
 sr.total_elapsed_time,  `
-exs.login_name AS 'loginName', ` 
-DB_NAME(ssu.database_id) AS 'DatabaseName', ` 
+exs.login_name AS 'loginName', `
+DB_NAME(ssu.database_id) AS 'DatabaseName', `
    (ssu.user_objects_alloc_page_count * 8) AS 'Space_Allocated_For_User_Objects_KB',  `
 (ssu.user_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_User_Objects_KB',  `
 (ssu.internal_objects_alloc_page_count * 8) AS 'Space_Allocated_For_Internal_Objects_KB',  `
