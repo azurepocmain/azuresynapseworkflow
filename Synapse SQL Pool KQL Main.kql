@@ -91,11 +91,83 @@ SynapseTempDBDW_CL
 //| render columnchart with ( kind=stacked)
 
 
-//Resource waits longer than 20 seconds
+//Resource waits longer than 1 minute by QID and time. 
 SynapseWaitsDW_CL
-    | project  request_id_s, bin(TimeGenerated, 5m), datetime_diff('second', TimeGenerated,request_time_t)
-	| project-rename seconds=Column1
-	| where seconds > 30
-   	| distinct request_id_s ,seconds,TimeGenerated
-       	| summarize sum(seconds) by  request_id_s, bin(TimeGenerated, 5m)
-//| render columnchart  
+    | project  request_id_s, type_s, bin(TimeGenerated, 5m), datetime_diff('minute', TimeGenerated,request_time_t)
+	| project-rename minutes=Column1
+    | where minutes > 1
+   	| distinct request_id_s ,minutes,type_s,TimeGenerated
+    | summarize sum(minutes) by  request_id_s,  bin(TimeGenerated, 5m)
+    | project-rename wait_time_minutes=sum_minutes
+| render columnchart  
+
+
+//Resource waits longer than 1 minute by wait type and time.
+SynapseWaitsDW_CL
+    | project  request_id_s, type_s, bin(TimeGenerated, 5m), datetime_diff('minute', TimeGenerated,request_time_t)
+	| project-rename minutes=Column1
+    | where minutes > 1
+   	| distinct request_id_s ,minutes,type_s,TimeGenerated
+    | summarize sum(minutes) by  type_s,  bin(TimeGenerated, 5m)
+    | project-rename wait_time_minutes=sum_minutes
+| render columnchart  
+
+
+//Resource waits longer than 1 minute by wait type and request ID, stacked.
+SynapseWaitsDW_CL
+    | project  request_id_s, type_s, bin(TimeGenerated, 5m), datetime_diff('minute', TimeGenerated,request_time_t)
+	| project-rename minutes=Column1
+    | where minutes > 1
+   	| distinct request_id_s ,minutes,type_s,TimeGenerated
+    | summarize sum(minutes) by  type_s,  request_id_s
+    | project-rename wait_time_minutes=sum_minutes
+| render columnchart  
+
+
+
+
+--------------------------------------------------*****ONLY FOR Dedicated SQL pools (formerly SQL DW)******* ---------------------------------------------------------------
+//Request runtime over query ID over compute level waits over time *****ONLY FOR Dedicated SQL pools (formerly SQL DW)******* 
+AzureDiagnostics
+| where Category == 'ExecRequests'
+| where StatementType_s !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+SubmitTime=min(SubmitTime_t),
+End_Time=max(EndTime_t),
+Command=max(Command_s),
+Last_Status=min(Status_s),
+Statement_Type=max(StatementType_s),
+Resource_class=max(ResourceClass_s)
+by RequestId_s
+| join kind=leftouter  (SynapseComputeWaitsDW_CL 
+| project  request_id_s, bin(TimeGenerated, 5m),  wait_type_s, wait_time_d)
+on $left.RequestId_s==$right.request_id_s 
+| extend bin(TimeGenerated, 5m), elapsedTime_min = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m) , elapsedTime_min_check = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m)
+| order by elapsedTime_min desc 
+| summarize max(elapsedTime_min), sum(wait_time_d/60000)  by    request_id_s, TimeGenerated
+| project-rename total_runtime_min=max_elapsedTime_min, total_wait_time_min=sum_
+| top 30 by total_runtime_min desc 
+| render columnchart with ( kind=stacked) 
+
+//Same as the above but over QID. *****ONLY FOR Dedicated SQL pools (formerly SQL DW)******* 
+AzureDiagnostics
+| where Category == 'ExecRequests'
+| where StatementType_s !in ('Batch','Execute')
+| summarize TimeGenerated=max(TimeGenerated),
+SubmitTime=min(SubmitTime_t),
+End_Time=max(EndTime_t),
+Command=max(Command_s),
+Last_Status=min(Status_s),
+Statement_Type=max(StatementType_s),
+Resource_class=max(ResourceClass_s)
+by RequestId_s
+| join kind=leftouter  (SynapseComputeWaitsDW_CL 
+| project  request_id_s, bin(TimeGenerated, 5m),  wait_type_s, wait_time_d)
+on $left.RequestId_s==$right.request_id_s 
+| extend bin(TimeGenerated, 5m), elapsedTime_min = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m) , elapsedTime_min_check = ((case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(SubmitTime =='1/1/1601, 12:00:00.000 AM', now(),SubmitTime ))/1m)
+| order by elapsedTime_min desc 
+| summarize max(elapsedTime_min), sum(wait_time_d/60000)  by    request_id_s
+| project-rename total_runtime_min=max_elapsedTime_min, total_wait_time_min=sum_
+| top 30 by total_runtime_min desc 
+| render columnchart with ( kind=stacked)  
+
