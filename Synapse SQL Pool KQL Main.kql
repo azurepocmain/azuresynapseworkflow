@@ -34,7 +34,6 @@ SynapseSqlPoolRequestSteps
 // select * from sys.dm_pdw_nodes_resource_governor_resource_pools and get that info from the default pool max memory KB and add it into the second line replacing 55481872 both times 
 
 SynapseMemoryDW_CL 
-//| summarize max(max_used_memory_kb_d) -1 by request_id_s
 | summarize abs(((todouble(55481872)-max(max_used_memory_kb_d))/todouble(55481872)*100) - (100))  by request_id_d,  bin(TimeGenerated, 5m) // please alter 55481872 to the correct memroy on the system, this should be dynamic next version
 | project-rename percentused=Column1
 //| render columnchart with ( kind=stacked) 
@@ -45,7 +44,7 @@ SynapseStoredProcDW_CL
 | summarize sum(total_elapsed_time_d)/60000000 by trim('.0' ,replace_regex(tostring(object_id_d),',', '')), bin(TimeGenerated, 30m)
 | where Column2 >= 10
 | project-rename sp_elapsed_time_min=Column2
-//| render columnchart with ( kind=stacked)
+| render columnchart with ( kind=stacked)
 
 
 
@@ -72,23 +71,32 @@ on $left.RequestId==$right.request_id_s
 //| render columnchart with ( kind=stacked)   
 
 
-//Compute level waits, checks for waits over 5 seconds you can alter where condition time as needed. 
+//Compute level waits, checks for waits over 5 seconds by RequestID aggregrations you can alter where condition time as needed. 
 SynapseComputeWaitsDW_CL 
 | where  wait_type_s != ''
-| where toint(wait_time_d) > 5000
-| summarize   max(toint(wait_time_d)) by  wait_type_s , request_id_s
-| project-rename max_wait_time=max_wait_time_d
-//| render columnchart with ( kind=stacked  )
+| where toint(wait_time_d)/1000 > 5
+| summarize   sum(toint(wait_time_d)/1000) by  wait_type_s , request_id_s
+| project-rename max_wait_in_seconds=sum_
+| render columnchart with ( kind=stacked  )
 
 
-//TempDB usage by Query ID only top 20
+//Compute level waits, checks for waits over 5 seconds by TimeGenerated aggregrations you can alter where condition time as needed. 
+SynapseComputeWaitsDW_CL 
+| where  wait_type_s != ''
+| where toint(wait_time_d)/1000 > 5
+| summarize   sum(toint(wait_time_d)/1000) by  wait_type_s ,  bin(TimeGenerated, 5m)
+| project-rename max_wait_in_seconds=sum_
+| render columnchart with ( kind=stacked  )
+
+
+//TempDB usage by Query ID only top 20 size in MB
 SynapseTempDBDW_CL
-| summarize  count() by  bin(TimeGenerated, 5m),request_id_s, (Space_Allocated_For_User_Objects_KB_d +  Space_Allocated_For_Internal_Objects_KB_d)/1024 
+| summarize  sum(Space_Allocated_For_User_Objects_KB_d) + sum( Space_Allocated_For_Internal_Objects_KB_d)/1024 by  bin(TimeGenerated, 15m),request_id_s 
 | project-rename Total_TempDB_Usage=Column1
 | order by Total_TempDB_Usage  desc
 | project-rename TempDB_in_MB=Total_TempDB_Usage
-| top 20
-//| render columnchart with ( kind=stacked)
+| take 20
+| render columnchart with ( kind=stacked)
 
 
 //Resource waits longer than 1 minute by QID and time. 
