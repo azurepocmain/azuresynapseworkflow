@@ -1,14 +1,25 @@
---STEP 1: 
+--STEP 1 Manual Step: 
 -- First step is to confirm active queries to isolate user queries
 -- Is the full text available? If so, check the estimated query plan by adding the EXPLAIN preceding the query. 
 /* Has the query started or is it still pending, check for a start time and the status to confirm its not suspended which means resource allocation pending tasks. */
+/* This first query is exuected manually as we need to identify the specific query in question on busy systems. Then manually execute the automated section until the end automated section. */
 SELECT *
 FROM sys.dm_pdw_exec_requests
 WHERE status not in ('Completed','Failed','Cancelled')
 AND session_id <> session_id()
 ORDER BY submit_time DESC;
 
-DECLARE @QIDINFO varchar(15) = 'QID615063'--<<<<--ADD_QID_HERE------
+
+
+--------------------------------------------Start of Automated Section Just Add the Request ID Below-----------------------------------------------------------------------------------
+DECLARE @QIDINFO varchar(15) = 'QID305314'--<<<<--ADD_QID_HERE------
+/* Get the max step to run the other queries */ 
+DECLARE @STEPINDEX int = 
+(SELECT step_index
+FROM sys.dm_pdw_request_steps
+WHERE request_id = @QIDINFO 
+AND status='Running');
+
 --STEP 2: 
 --Identify the step that is still running and take note, replace with the QID from the prior step.
 -- Do you see more than two steps? It may be an indication that the table distribution is not optimized for this query. Verify if you can provide the distribution column to the user to add to their query. Or consider redistributing the table if this is a continual issue. 
@@ -24,13 +35,8 @@ ORDER BY step_index;
 /*Verify why a step is taking longer on a specific compute node, review if the total time and if a compute node is running longer than others */
 SELECT * FROM sys.dm_pdw_sql_requests
 WHERE request_id = @QIDINFO --Place your request_id here
-AND step_index = <number> --Place your step_index ID here
+AND step_index = @STEPINDEX --Place your step_index ID here
 order by spid;
-
---STEP 3a: 
---You can also get a glimpse of the table joins by using the below query and reviewing the join operation and select statement metadata. 
-select * from 	sys.dm_pdw_nodes_exec_text_query_plan where pdw_node_id=<id> and session_id=<session number>
-
 
 
 --STEP 4: 
@@ -47,18 +53,7 @@ left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
 on noneexecsqltxt.sql_handle=querystatistcs.sql_handle
 and noneexecsqltxt.session_id=querystatistcs.session_id
 left join sys.dm_pdw_exec_sessions pwsess
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%set_distribute%', noneexecsqltxt.text )) 
-
-
-
---STEP 4a: 
---If you want to get a spcific plan. 
---To get the plan for the distributed query run the following.
---Check the join operation on the long running query, does it look valid. 
---Confirm if there are any invalid joins or if the estimated rows are off.
---This can be an indication of statistic issues.
-DBCC PDW_SHOWEXECUTIONPLAN (distribution_id, spid)
---Save the plan as .sqlplan to review the execution plan.
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%set_distribute%', noneexecsqltxt.text )); 
 
 
 --STEP 5: 
@@ -67,7 +62,7 @@ DBCC PDW_SHOWEXECUTIONPLAN (distribution_id, spid)
 select * from sys.dm_pdw_nodes_os_waiting_tasks  where session_id IN (SELECT spid
 FROM sys.dm_pdw_sql_requests
 WHERE request_id = @QIDINFO --Place your request_id here
-AND step_index = <number> --Place your step_index ID here);
+AND step_index = @STEPINDEX) --Place your step_index ID here)
 
 
 --STEP 5a: 
@@ -111,7 +106,7 @@ left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt
 on noneexecsqltxt.sql_handle=queryprofiles.sql_handle
 and noneexecsqltxt.session_id=queryprofiles.session_id
 left join sys.dm_pdw_exec_sessions pwsess
-on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) 
+on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )); 
 
 
 --STEP 7: 
@@ -119,7 +114,7 @@ on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', non
 SELECT *
 FROM sys.dm_pdw_dms_workers
 WHERE request_id = @QIDINFO --Place your request_id here
-AND step_index = <stepIDHere>; --Place your step_index ID here
+AND step_index = @STEPINDEX; --Place your step_index ID here
 
 
 --STEP 8: 
@@ -137,3 +132,4 @@ JOIN  sys.dm_pdw_exec_requests requests
 ON waits.request_id=requests.request_id
 WHERE waits.request_id = @QIDINFO
 ORDER BY waits.object_name, waits.object_type, waits.state;
+--------------------------------------------End of Automated Section------------------------------------------------------------------------------------
