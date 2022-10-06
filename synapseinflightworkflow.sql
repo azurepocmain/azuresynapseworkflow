@@ -121,15 +121,4 @@ AND step_index = @STEPINDEX; --Place your step_index ID here
 --Confirm that the SQL did not have errors:
 select * From sys.dm_pdw_errors where request_id=@QIDINFO;
 
-
---STEP 9: 
---Verify the object name of the request:
-SELECT waits.session_id, waits.request_id, requests.command,
-requests.status, requests.start_time, waits.type, waits.state,
-waits.object_type, waits.object_name
-FROM   sys.dm_pdw_waits waits
-JOIN  sys.dm_pdw_exec_requests requests
-ON waits.request_id=requests.request_id
-WHERE waits.request_id = @QIDINFO
-ORDER BY waits.object_name, waits.object_type, waits.state;
 --------------------------------------------End of Automated Section------------------------------------------------------------------------------------
