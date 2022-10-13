@@ -35,7 +35,7 @@ ORDER BY step_index;
 /*Verify why a step is taking longer on a specific compute node, review if the total time and if a compute node is running longer than others */
 SELECT * FROM sys.dm_pdw_sql_requests
 WHERE request_id = @QIDINFO --Place your request_id here
-AND step_index = @STEPINDEX --Place your step_index ID here
+AND step_index = 2 --Place your step_index ID here
 order by spid;
 
 
