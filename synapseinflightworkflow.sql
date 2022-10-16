@@ -13,6 +13,14 @@ ORDER BY submit_time DESC;
 
 --------------------------------------------Start of Automated Section Just Add the Request ID Below-----------------------------------------------------------------------------------
 DECLARE @QIDINFO varchar(15) = 'QID305314'--<<<<--ADD_QID_HERE------
+--Or get it dynamically: 
+/*SELECT top(1) request_id
+FROM sys.dm_pdw_exec_requests
+WHERE status not in ('Completed','Failed','Cancelled')
+AND session_id <> session_id()
+AND total_elapsed_time >=(SELECT MAX(total_elapsed_time) FROM sys.dm_pdw_exec_requests WHERE status not in ('Completed','Failed','Cancelled')
+AND session_id <> session_id())*/
+
 /* Get the max step to run the other queries */ 
 DECLARE @STEPINDEX int = 
 (SELECT step_index
