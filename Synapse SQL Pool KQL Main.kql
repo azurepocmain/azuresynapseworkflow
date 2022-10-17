@@ -36,7 +36,7 @@ SynapseSqlPoolRequestSteps
 SynapseMemoryDW_CL 
 | summarize abs(((todouble(55481872)-max(max_used_memory_kb_d))/todouble(55481872)*100) - (100))  by request_id_d,  bin(TimeGenerated, 5m) // please alter 55481872 to the correct memroy on the system, this should be dynamic next version
 | project-rename percentused=Column1
-//| render columnchart with ( kind=stacked) 
+| render columnchart with ( kind=stacked) 
 
 
 //Stored procedure usage in minutes with a 30min window for TimeGenerated
@@ -91,10 +91,10 @@ SynapseComputeWaitsDW_CL
 
 //TempDB usage by Query ID only top 20 size in MB
 SynapseTempDBDW_CL
-| summarize  sum(Space_Allocated_For_User_Objects_KB_d) + sum( Space_Allocated_For_Internal_Objects_KB_d)/1024 by  bin(TimeGenerated, 15m),request_id_s 
+| summarize  sum(Space_Allocated_For_User_Objects_MB_d) + sum( Space_Allocated_For_Internal_Objects_MB_d)/1024 by  bin(TimeGenerated, 15m),request_id_s 
 | project-rename Total_TempDB_Usage=Column1
 | order by Total_TempDB_Usage  desc
-| project-rename TempDB_in_MB=Total_TempDB_Usage
+| project-rename TempDB_in_GB=Total_TempDB_Usage
 | take 20
 | render columnchart with ( kind=stacked)
 
