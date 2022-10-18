@@ -1,10 +1,10 @@
  try {
  
 
-    $dwdb1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_waits_database_name'
-    $SQLDW=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_waits_instance_name'
-    $workspaceidsynapse1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_waits_workspaceidsynapse'
-    $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_waits_workspacekeysynapse'
+    $dwdb=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_database_name'
+    $SQLDW=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_instance_name'
+    $workspaceidsynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspaceidsynapse'
+    $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspacekeysynapse'
 
     
     
@@ -37,7 +37,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -61,7 +61,7 @@ and nodspstats.last_execution_time >= DATEADD(minute,-5,getdate()); "
     if ($SynapseStoredProc -ge 1)
     {
     # Replace with your Workspace ID From Log Analytics
-    $CustomerId = $workspaceidsynapse1
+    $CustomerId = $workspaceidsynapse
         # Replace with your Primary Key From Log Analytics
     $SharedKey = $workspacekeysynapse
         # Specify the name of the record type that you'll be creating. For This case it is Synapse users SPs info which will create a SynapseStoredProcDW table in the workspace to query
@@ -81,7 +81,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
