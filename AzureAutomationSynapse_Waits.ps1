@@ -5,9 +5,9 @@ try {
 
 
 
-    $dwdb1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_database_name'
+    $dwdb=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_database_name'
     $SQLDW=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_instance_name'
-    $workspaceidsynapse1=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspaceidsynapse'
+    $workspaceidsynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspaceidsynapse'
     $workspacekeysynapse=Get-AutomationVariable -Name 'Log_Analytics_test_synapse_workspacekeysynapse'
 
 
@@ -54,7 +54,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -90,7 +90,7 @@ if ($SynapseWaits -ge 1)
 
 # Replace with your Workspace ID From Log Analytics
 
-$CustomerId = $workspaceidsynapse1
+$CustomerId = $workspaceidsynapse
 
  
 
@@ -123,7 +123,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
