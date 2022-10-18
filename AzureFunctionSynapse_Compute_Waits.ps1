@@ -68,7 +68,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -136,7 +136,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
