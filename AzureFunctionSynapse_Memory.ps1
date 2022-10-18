@@ -39,9 +39,9 @@ $SQLDW=@($env:AzureSynapse1);
 
 Write-Host $SQLDW
 
-Write-Host $env:dwdb1
+Write-Host $env:dwdb
 
-##Write-Host $env:azpocsub
+
 
 ################################################
 
@@ -68,7 +68,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -102,13 +102,13 @@ if ($SynapseMemory -ge 1)
 
 # Replace with your Workspace ID From Log Analytics
 
-$CustomerId = $env:workspaceidsynapse1
+$CustomerId = $env:workspaceidsynapse2
 
  
 
 # Replace with your Primary Key From Log Analytics
 
-$SharedKey = $env:workspacekeysynapse
+$SharedKey = $env:workspacekeysynapse2
 
  
 
@@ -135,7 +135,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb2;"
+$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
 
 $SqlConnection.AccessToken = $AccessToken
 
