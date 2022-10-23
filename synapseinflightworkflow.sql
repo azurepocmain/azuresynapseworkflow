@@ -118,7 +118,7 @@ on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', non
 
 
 --STEP 7: 
---Verify if there are any table skewed in a specific distribution.
+--Verify how much data has been processed for a request.
 SELECT *
 FROM sys.dm_pdw_dms_workers
 WHERE request_id = @QIDINFO --Place your request_id here
