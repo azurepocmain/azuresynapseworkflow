@@ -42,7 +42,7 @@ $SqlCmd.CommandText = "SELECT Count(1) AS TOTAL  `
 from sys.dm_pdw_exec_sessions pwsess join `
 sys.dm_pdw_exec_requests pwrequ `
 on pwsess.session_id=pwrequ.session_id `
-where pwrequ.submit_time >= DATEADD(minute,-1,getdate()) `
+where pwrequ.submit_time >= DATEADD(minute,-5,getdate()) `
  AND pwrequ.session_id <> session_id() "
 $SqlCmd.Connection = $SqlConnection
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
@@ -87,7 +87,7 @@ pwrequ.total_elapsed_time,  pwrequ.Error_Id, pwrequ.result_cache_hit,pwrequ.Comm
 from sys.dm_pdw_exec_sessions pwsess join `
 sys.dm_pdw_exec_requests pwrequ `
 on pwsess.session_id=pwrequ.session_id `
-where pwrequ.submit_time >= DATEADD(minute,-1,getdate()) AND `
+where pwrequ.submit_time >= DATEADD(minute,-5,getdate()) AND `
  pwrequ.session_id <> session_id() `
  group by pwsess.session_id, pwsess.status, pwsess.Login_Name, pwsess.Login_Time, `
  pwsess.Client_Id, pwsess.App_Name, pwsess.Sql_Spid, pwrequ.Request_Id, `
