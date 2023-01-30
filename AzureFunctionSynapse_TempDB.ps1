@@ -122,7 +122,7 @@ $SharedKey = $env:workspacekeysynapse2
 
  
 
-# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseMemoryDW table in the workspace to query
+# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseTempDBUsageDW table in the workspace to query
 
 $LogType = "SynapseTempDBUsageDW"
 
