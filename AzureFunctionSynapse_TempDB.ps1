@@ -87,20 +87,14 @@ group by pdw.request_id `
 HAVING CAST(sum(pdw.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) > 1"
 
 $SqlCmd.Connection = $SqlConnection
-##Added 4min connection timeout for larger environments 
+##Added 4min query timeout for larger environments 
 $SqlCmd.CommandTimeout=240
-
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-
 $SqlAdapter.SelectCommand = $SqlCmd
-
-$dataset = New-Object System.Data.DataSet
-
+$dataset = New-Object System.Data.DataTable
 $SqlAdapter.Fill($dataset)
-
 $SqlConnection.Close()
-
-$SynapseTempDBUsage=($DataSet.Item ).count 
+$SynapseTempDBUsage=($DataSet.Item).count
 
 
  
