@@ -81,13 +81,13 @@ if ($SynapseErrors -ge 1)
 
 # Replace with your Workspace ID From Log Analytics
 
-$CustomerId = workspaceidsynapse
+$CustomerId = $workspaceidsynapse
 
  
 
 # Replace with your Primary Key From Log Analytics
 
-$SharedKey = workspacekeysynapse
+$SharedKey = $workspacekeysynapse
 
  
 
