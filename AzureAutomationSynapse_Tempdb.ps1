@@ -56,16 +56,17 @@ $SqlConnection.AccessToken = $AccessToken
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
 $SqlCmd.CommandText = "SELECT `
-sum(pdw.bytes_processed) as 'bytes_written' `
-,CAST(sum(pdw.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) AS 'gb_written' `
-,sum(pdw.rows_processed) as 'rows_written' `
-,pdw.request_id `
-from Sys.dm_pdw_dms_workers pdw `
-WHERE end_time is not null `
-AND pdw.type = 'Writer' `
-AND destination_info like  '_tempdb%' or destination_info IS NULL `
-group by pdw.request_id `
-HAVING CAST(sum(pdw.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) > 1"
+sum(dms.bytes_processed) as 'bytes_written' `
+,CAST(sum(dms.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) AS 'gb_written' `
+,sum(dms.rows_processed) as 'rows_written' `
+,dms.request_id `
+,dms.pdw_node_id `
+from Sys.dm_pdw_dms_workers dms `
+WHERE dms.end_time is not null `
+AND dms.type = 'Writer' `
+AND dms.destination_info like  '_tempdb%' or dms.destination_info IS NULL `
+group by dms.request_id, dms.pdw_node_id `
+HAVING CAST(sum(dms.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) > 1"
 
 $SqlCmd.Connection = $SqlConnection
 ##Added 4min query timeout for larger environments 
@@ -109,7 +110,7 @@ $TimeStampField = ""
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object request_id, bytes_written, gb_written, rows_written   | ConvertTo-Json 
+$SynapsePOC=$dataset | Select-Object request_id, bytes_written, gb_written, rows_written, pdw_node_id   | ConvertTo-Json 
 
 
 
