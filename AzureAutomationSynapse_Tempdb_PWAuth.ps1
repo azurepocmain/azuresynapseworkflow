@@ -44,117 +44,50 @@ $SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT  Count(1) AS TOTAL `
-FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu  `
-INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id  `
-INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id  `
-INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id  `
-LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id  `
-LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id  `
-WHERE   `
-exr.end_time IS  NULL  `
-AND  `
-DB_NAME(ssu.database_id) = 'tempdb'  `
-AND exs.session_id <> session_id()  `
-AND es.login_name <> 'sa'  `
-AND  (ssu.user_objects_alloc_page_count * 8) <> 0 or (ssu.internal_objects_alloc_page_count * 8) <> 0; "
+$SqlCmd.CommandText = ""SELECT `
+sum(pdw.bytes_processed) as 'bytes_written' `
+,CAST(sum(pdw.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) AS 'gb_written' `
+,sum(pdw.rows_processed) as 'rows_written' `
+,pdw.request_id `
+from Sys.dm_pdw_dms_workers pdw `
+WHERE end_time is not null `
+AND pdw.type = 'Writer' `
+AND destination_info like  '_tempdb%' or destination_info IS NULL `
+group by pdw.request_id `
+HAVING CAST(sum(pdw.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) > 1"
 
 $SqlCmd.Connection = $SqlConnection
-
+##Added 4min connection timeout for larger environments 
+$SqlCmd.CommandTimeout=240
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-
 $SqlAdapter.SelectCommand = $SqlCmd
-
 $dataset = New-Object System.Data.DataSet
-
 $SqlAdapter.Fill($dataset)
-
 $SqlConnection.Close()
-
-$SynapseTempDB=($DataSet.Tables[0]).TOTAL
+$SynapseTempDBUsage=($DataSet.Item ).count 
 
 
 
  
 
 
-if ($SynapseTempDB -ge 1)
-
+if ($SynapseTempDBUsage -ge 1)
 {
-
 # Replace with your Workspace ID From Log Analytics
-
 $CustomerId = $workspaceidsynapse1
-
- 
-
 # Replace with your Primary Key From Log Analytics
-
 $SharedKey = $workspacekeysynapse
-
- 
-
-# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseTempDBDW table in the workspace to query
-
-$LogType = "SynapseTempDBDW"
+# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseTempDBUsageDW table in the workspace to query
+$LogType = "SynapseTempDBUsageDW"
 
 
 # You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
 
 $TimeStampField = ""
 
-
-
-# The below metadata will be added to the workspace if the condition is met. There is an initial check above before this section executes to not waste resources
-
-$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$dwdb1;user=$username;password=$password;"
-$SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = "SELECT  `
-sr.request_id,  `
-ssu.session_id,  `
-ssu.pdw_node_id,  `
-        exr.submit_time,  `
-        exr.start_time,  `
-        exr.end_time,  `
-exr.command,  `
-sr.total_elapsed_time,  `
-exs.login_name AS 'loginName', `
-DB_NAME(ssu.database_id) AS 'DatabaseName', `
-   (ssu.user_objects_alloc_page_count * 8) AS 'Space_Allocated_For_User_Objects_KB',  `
-(ssu.user_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_User_Objects_KB',  `
-(ssu.internal_objects_alloc_page_count * 8) AS 'Space_Allocated_For_Internal_Objects_KB',  `
-(ssu.internal_objects_dealloc_page_count * 8) AS 'Space_Deallocated_For_Internal_Objects_KB',  `
-CASE es.is_user_process  `
-WHEN 1 THEN 'User Session'  `
-WHEN 0 THEN 'System Session'  `
-END AS 'SessionType',  `
-es.row_count AS 'RowCount'  `
-FROM sys.dm_pdw_nodes_db_session_space_usage AS ssu  `
-INNER JOIN sys.dm_pdw_nodes_exec_sessions AS es ON ssu.session_id = es.session_id AND ssu.pdw_node_id = es.pdw_node_id  `
-INNER JOIN sys.dm_pdw_nodes_exec_connections AS er ON ssu.session_id = er.session_id AND ssu.pdw_node_id = er.pdw_node_id  `
-INNER JOIN microsoft.vw_sql_requests AS sr ON ssu.session_id = sr.spid AND ssu.pdw_node_id = sr.pdw_node_id  `
-LEFT JOIN sys.dm_pdw_exec_requests exr on exr.request_id = sr.request_id  `
-LEFT JOIN sys.dm_pdw_exec_sessions exs on exr.session_id = exs.session_id  `
-WHERE   `
-exr.end_time IS  NULL  `
-AND  `
-DB_NAME(ssu.database_id) = 'tempdb'  `
-AND exs.session_id <> session_id()   `
-AND es.login_name <> 'sa'  `
-AND  (ssu.user_objects_alloc_page_count * 8) <> 0 or (ssu.internal_objects_alloc_page_count * 8) <> 0;  "
-
-$SqlCmd.Connection = $SqlConnection
-$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-$SqlAdapter.SelectCommand = $SqlCmd
-$dataset = New-Object System.Data.DataTable
-$SqlAdapter.Fill($dataset)
-$SqlConnection.Close()
-
-
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object request_id, loginName, session_id, submit_time,   start_time, end_time,  command,  Space_Allocated_For_User_Objects_KB, Space_Deallocated_For_User_Objects_KB, Space_Allocated_For_Internal_Objects_KB, Space_Deallocated_For_Internal_Objects_KB, MemoryUsage_in_KB, SessionType, RowCount  |ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object request_id, bytes_written, gb_written, rows_written   | ConvertTo-Json 
 
 
 
