@@ -74,7 +74,7 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SSELECT `
+$SqlCmd.CommandText = "SELECT `
 sum(dms.bytes_processed) as 'bytes_written' `
 ,CAST(sum(dms.bytes_processed)/1024.0/1024.0/1024.0 AS Decimal(10,1)) AS 'gb_written' `
 ,sum(dms.rows_processed) as 'rows_written' `
