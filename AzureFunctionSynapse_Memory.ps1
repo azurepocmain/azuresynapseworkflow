@@ -74,9 +74,15 @@ $SqlConnection.AccessToken = $AccessToken
 
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
-$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran `
-where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) `
-HAVING  Count(1) >1;"
+$SqlCmd.CommandText = "select   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) AS request_id, nomemgran.dop, nomemgran.request_time, nomemgran.grant_time, `
+nomemgran.requested_memory_kb,  required_memory_kb, nomemgran.used_memory_kb, nomemgran.max_used_memory_kb, nomemgran.query_cost, nomemgran.ideal_memory_kb, `
+nomemgran.sql_handle,  noneexecsqltxt.text, pwsess.login_name `
+from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt `
+on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
+and noneexecsqltxt.session_id=nomemgran.session_id `
+left join sys.dm_pdw_exec_sessions pwsess `
+on pwsess.request_id like    SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) `
+where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) "
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -84,13 +90,13 @@ $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
 
 $SqlAdapter.SelectCommand = $SqlCmd
 
-$dataset = New-Object System.Data.DataSet
+$dataset = New-Object System.Data.DataTable
 
 $SqlAdapter.Fill($dataset)
 
 $SqlConnection.Close()
 
-$SynapseMemory=($DataSet.Tables[0]).TOTAL
+$SynapseMemory=($DataSet.Item).count
 
 
  
@@ -121,57 +127,9 @@ $LogType = "SynapseMemoryDW"
 
 $TimeStampField = ""
 
-
-
-# The below metadata will be added to the workspace if the condition is met. There is an initial check above before this section executes to not waste resources
-
-$resourceURI = "https://database.windows.net/"
-
-$tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
-
-$tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
-
-$accessToken = $tokenResponse.access_token
-
-$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
-
-$SqlConnection.AccessToken = $AccessToken
-
-$SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-
-$SqlCmd.CommandText = "select   SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) AS request_id, nomemgran.dop, nomemgran.request_time, nomemgran.grant_time, `
-nomemgran.requested_memory_kb,  required_memory_kb, nomemgran.used_memory_kb, nomemgran.max_used_memory_kb, nomemgran.query_cost, nomemgran.ideal_memory_kb, `
-nomemgran.sql_handle,  noneexecsqltxt.text, pwsess.login_name `
-from sys.dm_pdw_nodes_exec_query_memory_grants  nomemgran left join sys.dm_pdw_nodes_exec_sql_text noneexecsqltxt `
-on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
-and noneexecsqltxt.session_id=nomemgran.session_id `
-left join sys.dm_pdw_exec_sessions pwsess `
-on pwsess.request_id like    SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) `
-where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) "
-
-$SqlCmd.Connection = $SqlConnection
-
-$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-
-$SqlAdapter.SelectCommand = $SqlCmd
-
-$dataset = New-Object System.Data.DataTable
-
-$SqlAdapter.Fill($dataset)
-
-$SqlConnection.Close()
-
-
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
 $SynapsePOC=$dataset | Select-Object request_id, dop, request_time,  grant_time, requested_memory_kb,   required_memory_kb,   used_memory_kb, max_used_memory_kb, ideal_memory_kb,  query_cost,  login_name  | ConvertTo-Json
-
-
-
-
-
 
 # Create the function to create the authorization signature
 
