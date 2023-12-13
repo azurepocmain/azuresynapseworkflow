@@ -39,7 +39,7 @@ $SQLDW=@($env:AzureSynapse2);
 
 Write-Host $SQLDW
 
-Write-Host $env:dwdb2
+Write-Host $env:dwdb
 
 ##Write-Host $env:azpocsub
 
@@ -57,74 +57,6 @@ Write-Host $env:dwdb2
 
 
  
-
-$resourceURI = "https://database.windows.net/"
-
-$tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
-
-$tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
-
-$accessToken = $tokenResponse.access_token
-
-$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
-
-$SqlConnection.AccessToken = $AccessToken
-
-$SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-
-$SqlCmd.CommandText = "select count(1) AS TOTAL from sys.dm_pdw_nodes_exec_requests nodeexreq join `
-sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid `
-AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id join  sys.dm_pdw_exec_requests `
-execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' );  --session_id() check is not needed as DMV queries do not run on the compute level;"
-
-$SqlCmd.Connection = $SqlConnection
-
-$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-
-$SqlAdapter.SelectCommand = $SqlCmd
-
-$dataset = New-Object System.Data.DataSet
-
-$SqlAdapter.Fill($dataset)
-
-$SqlConnection.Close()
-
-$SynapseComputeWait=($DataSet.Tables[0]).TOTAL
-
-
- 
-
-
-if ($SynapseComputeWait -ge 1)
-
-{
-
-# Replace with your Workspace ID From Log Analytics
-
-$CustomerId = $env:workspaceidsynapse2
-
- 
-
-# Replace with your Primary Key From Log Analytics
-
-$SharedKey = $env:workspacekeysynapse2
-
- 
-
-# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseComputeWaitsDW table in the workspace to query
-
-$LogType = "SynapseComputeWaitsDW"
-
-
-# You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
-
-$TimeStampField = ""
-
-
-
-# The below metadata will be added to the workspace if the condition is met. There is an initial check above before this section executes to not waste resources
 
 $resourceURI = "https://database.windows.net/"
 
@@ -160,14 +92,41 @@ $SqlAdapter.Fill($dataset)
 
 $SqlConnection.Close()
 
+$SynapseComputeWait=($DataSet.Item).count
+
+
+ 
+
+
+if ($SynapseComputeWait -ge 1)
+
+{
+
+# Replace with your Workspace ID From Log Analytics
+
+$CustomerId = $env:workspaceidsynapse2
+
+ 
+
+# Replace with your Primary Key From Log Analytics
+
+$SharedKey = $env:workspacekeysynapse2
+
+ 
+
+# Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseComputeWaitsDW table in the workspace to query
+
+$LogType = "SynapseComputeWaitsDW"
+
+
+# You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
+
+$TimeStampField = ""
+
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
 $SynapsePOC=$dataset | Select-Object request_id, wait_time, total_elapsed_time,  reads, writes, logical_reads,  wait_type, command   |ConvertTo-Json
-
-
-
-
 
 
 # Create the function to create the authorization signature
