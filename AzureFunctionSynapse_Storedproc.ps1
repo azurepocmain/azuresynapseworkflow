@@ -16,11 +16,11 @@ Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
 try {
   ###Context no longer needed as we will get the Synapse SQL Pool instance name from the config parameter.### 
    ### Set-AzContext -SubscriptionId $env:azpocsub
-$SQLDW=@($env:AzureSynapse2);
+$SQLDW=@($env:AzureSynapse1);
  
 ##You can remove the  below in Prod if you like after testing#####
   Write-Host $SQLDW
-  Write-Host $env:dwdb2
+  Write-Host $env:dwdb
   ##Write-Host $env:azpocsub
 ################################################
 
@@ -31,46 +31,6 @@ $SQLDW=@($env:AzureSynapse2);
 
  
 
-$resourceURI = "https://database.windows.net/"
-$tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
-$tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI 
-$accessToken = $tokenResponse.access_token 
-$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
-$SqlConnection.AccessToken = $AccessToken
-$SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = "select  Count(1) AS TOTAL `
-  from sys.dm_pdw_nodes_exec_procedure_stats nodspstats `
-where nodspstats.database_id<> '32767' `
-and nodspstats.last_execution_time >= DATEADD(minute,-5,getdate()); "
-$SqlCmd.Connection = $SqlConnection
-$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-$SqlAdapter.SelectCommand = $SqlCmd
-$dataset = New-Object System.Data.DataSet
-$SqlAdapter.Fill($dataset)
-$SqlConnection.Close()
-$SynapseStoredProc=($DataSet.Tables[0]).TOTAL
- 
-
-
- 
-if ($SynapseStoredProc  -ge 1)
-{
-# Replace with your Workspace ID From Log Analytics 
-$CustomerId = $env:workspaceidsynapse2
-Write-Host $CustomerId
-# Replace with your Primary Key From Log Analytics 
-$SharedKey = $env:workspacekeysynapse2
-##Do not run the below write host in Prod for security reasons, here for testing purposes.
-###Write-Host $SharedKey 
-# Specify the name of the record type that you'll be creating For This case it is SynapseStoredProcDW which will create a SynapseStoredProcDW table in the workspace to query
-$LogType = "SynapseStoredProcDW"
- 
-# You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
-$TimeStampField = ""
- 
- 
-# The below metadata will be added to the workspace if the condition is met. There is an initial check above before this section executes to not waste resources
 $resourceURI = "https://database.windows.net/"
 $tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
 $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI 
@@ -94,12 +54,27 @@ $SqlAdapter.SelectCommand = $SqlCmd
 $dataset = New-Object System.Data.DataTable
 $SqlAdapter.Fill($dataset)
 $SqlConnection.Close()
+$SynapseStoredProc=($DataSet.Item).count
+ 
+
+
+ 
+if ($SynapseStoredProc  -ge 1)
+{
+# Replace with your Workspace ID From Log Analytics 
+$CustomerId = $env:workspaceidsynapse2
+# Replace with your Primary Key From Log Analytics 
+$SharedKey = $env:workspacekeysynapse2
+##Do not run the below write host in Prod for security reasons, here for testing purposes.
+###Write-Host $SharedKey 
+# Specify the name of the record type that you'll be creating For This case it is SynapseStoredProcDW which will create a SynapseStoredProcDW table in the workspace to query
+$LogType = "SynapseStoredProcDW"
+ 
+# You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
+$TimeStampField = ""
  
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 $SynapsePOC=$dataset | Select-Object  object_id, type_desc, execution_count, cached_time,  last_execution_time ,  max_worker_time, total_physical_reads,  last_physical_reads, min_physical_reads, max_physical_reads, total_logical_writes,  max_logical_writes, total_logical_reads, last_logical_reads, min_logical_reads, max_logical_reads, total_elapsed_time, last_elapsed_time,  total_spills, total_num_physical_reads |ConvertTo-Json 
- 
- 
- 
  
 # Create the function to create the authorization signature
 Function Build-Signature ($customerId, $sharedKey, $date, $contentLength, $method, $contentType, $resource)
