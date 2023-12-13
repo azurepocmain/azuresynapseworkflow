@@ -32,7 +32,7 @@ try {
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
 
-$SQLDW=@($env:AzureSynapse2);
+$SQLDW=@($env:AzureSynapse1);
 
 
 ##You can remove the below in Prod if you like after testing#####
