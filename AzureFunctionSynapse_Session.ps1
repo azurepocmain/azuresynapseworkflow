@@ -16,11 +16,11 @@ Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
 try {
   ###Context no longer needed as we will get the Synapse SQL Pool instance name from the config parameter.### 
    ### Set-AzContext -SubscriptionId $env:azpocsub
-$SQLDW=@($env:AzureSynapse2);
+$SQLDW=@($env:AzureSynapse1);
  
 ##You can remove the  below in Prod if you like after testing#####
   Write-Host $SQLDW
-  Write-Host $env:dwdb2
+  Write-Host $env:dwdb
 ################################################
 
 ###You can use a foreach loop if there are multiple SQL DWs that require querying, you will have to set the instance and DB for every foreach call###
@@ -38,19 +38,26 @@ $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 $SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
 $SqlConnection.AccessToken = $AccessToken
 $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = "SELECT Count(1) AS TOTAL  `
+$SqlCmd.CommandText = " select pwsess.session_id AS [Session_Id_s], pwsess.status AS [Status_s], pwsess.Login_Name, pwsess.Login_Time, `
+pwsess.Client_Id, pwsess.App_Name, pwsess.Sql_Spid, pwrequ.Request_Id AS [RequestId],  pwrequ.Session_Id AS [Session_id_r], `
+pwrequ.status AS [Status_r],  max(pwrequ.start_time) AS [start_time],  pwrequ.end_time, `
+pwrequ.total_elapsed_time,  pwrequ.Error_Id, pwrequ.result_cache_hit,pwrequ.Command `
 from sys.dm_pdw_exec_sessions pwsess join `
 sys.dm_pdw_exec_requests pwrequ `
 on pwsess.session_id=pwrequ.session_id `
-where pwrequ.submit_time >= DATEADD(minute,-5,getdate()) `
- AND pwrequ.session_id <> session_id() "
+where pwrequ.submit_time >= DATEADD(minute,-5,getdate()) AND `
+pwrequ.session_id <> session_id() `
+group by pwsess.session_id, pwsess.status, pwsess.Login_Name, pwsess.Login_Time, `
+pwsess.Client_Id, pwsess.App_Name, pwsess.Sql_Spid, pwrequ.Request_Id, `
+pwrequ.Session_Id, pwrequ.status, pwrequ.end_time, `
+pwrequ.total_elapsed_time,  pwrequ.Error_Id, pwrequ.result_cache_hit, pwrequ.Command;  "
 $SqlCmd.Connection = $SqlConnection
 $SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
 $SqlAdapter.SelectCommand = $SqlCmd
-$dataset = New-Object System.Data.DataSet
+$dataset = New-Object System.Data.DataTable
 $SqlAdapter.Fill($dataset)
 $SqlConnection.Close()
-$SynapseSess=($DataSet.Tables[0]).TOTAL
+$SynapseSess=($DataSet.Item).count
  
 
 
@@ -59,7 +66,7 @@ if ($SynapseSess  -ge 1)
 {
 # Replace with your Workspace ID From Log Analytics 
 $CustomerId = $env:workspaceidsynapse2
-Write-Host $CustomerId
+
 # Replace with your Primary Key From Log Analytics 
 $SharedKey = $env:workspacekeysynapse2
 ##Do not run the below write host in Prod for security reasons, here for testing purposes.
@@ -70,41 +77,8 @@ $LogType = "SynapseSessionDW"
 # You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
 $TimeStampField = ""
  
- 
-# The below metadata will be added to the workspace if the condition is met. There is an initial check above before this section executes to not waste resources
-$resourceURI = "https://database.windows.net/"
-$tokenAuthURI = $env:MSI_ENDPOINT + "?resource=$resourceURI&api-version=2017-09-01"
-$tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI 
-$accessToken = $tokenResponse.access_token 
-$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
-$SqlConnection.AccessToken = $AccessToken
-$SqlCmd = New-Object System.Data.SqlClient.SqlCommand
-$SqlCmd.CommandText = " select pwsess.session_id AS [Session_Id_s], pwsess.status AS [Status_s], pwsess.Login_Name, pwsess.Login_Time, `
- pwsess.Client_Id, pwsess.App_Name, pwsess.Sql_Spid, pwrequ.Request_Id AS [RequestId],  pwrequ.Session_Id AS [Session_id_r], `
-pwrequ.status AS [Status_r],  max(pwrequ.start_time) AS [start_time],  pwrequ.end_time, `
-pwrequ.total_elapsed_time,  pwrequ.Error_Id, pwrequ.result_cache_hit,pwrequ.Command `
-from sys.dm_pdw_exec_sessions pwsess join `
-sys.dm_pdw_exec_requests pwrequ `
-on pwsess.session_id=pwrequ.session_id `
-where pwrequ.submit_time >= DATEADD(minute,-5,getdate()) AND `
- pwrequ.session_id <> session_id() `
- group by pwsess.session_id, pwsess.status, pwsess.Login_Name, pwsess.Login_Time, `
- pwsess.Client_Id, pwsess.App_Name, pwsess.Sql_Spid, pwrequ.Request_Id, `
- pwrequ.Session_Id, pwrequ.status, pwrequ.end_time, `
-pwrequ.total_elapsed_time,  pwrequ.Error_Id, pwrequ.result_cache_hit, pwrequ.Command;  "
-$SqlCmd.Connection = $SqlConnection
-$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-$SqlAdapter.SelectCommand = $SqlCmd
-$dataset = New-Object System.Data.DataTable
-$SqlAdapter.Fill($dataset)
-$SqlConnection.Close()
- 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 $SynapsePOC=$dataset | Select-Object Session_id_s, status_s, login_name, login_time,  client_id ,  app_name, sql_spid,  RequestId, Session_id_r, status_r, start_time,  end_time, total_elapsed_time, error_id, result_cache_hit, command  |ConvertTo-Json
- 
- 
- 
  
  
 # Create the function to create the authorization signature
