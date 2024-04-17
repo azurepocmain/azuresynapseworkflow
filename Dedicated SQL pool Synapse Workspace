@@ -1,3 +1,20 @@
+
+//KQL that tracks executions and even procedures, use the Session_id as the aggregation and the timegenerated as the sequence of SQL in the procedure 
+SynapseSqlPoolExecRequests
+| where Category == 'ExecRequests'
+| summarize TimeGenerated=max(TimeGenerated),
+Start_Time=max(StartTime),
+End_Time=max(EndTime),
+Command=max(Command),
+Last_Status=min(Status),
+Statement_Type=max(StatementType),
+Resource_class=max(ResourceClass)
+by RequestId, SessionId
+| extend elapsedTime_min = (case(End_Time =='1/1/1601, 12:00:00.000 AM', now(),End_Time) - case(Start_Time =='1/1/1601, 12:00:00.000 AM', now(),Start_Time ))/1m
+| order by SessionId asc, TimeGenerated desc
+
+
+
 //Query run times with join to SynapseSessionDW_CL table to get username info. 
 //Please add the server name in the variable please note that this will be case sensitive. 
 let AzuresynapseDW = 'servernameherelowercase';  //<--add server name lower case here. 
