@@ -1,4 +1,32 @@
 
+// Get number of steps and time duration for SQL execution. 
+SynapseSqlPoolRequestSteps
+| where RequestId in ( "QID277103", "QID281937")// Alter QID277103 QID281937 and add all the Request ID associated to the session ID most likely.
+| where Category == 'RequestSteps'  
+| extend TimeGenerated = todatetime(TimeGenerated) 
+| summarize 
+    StartTime = min(TimeGenerated), 
+    EndTime = max(TimeGenerated), 
+    LogicalServerName = max(LogicalServerName), 
+    Command = max(Command), 
+    RowCount = max(RowCount), 
+    Category = max(Category), 
+    StepIndexs = max(StepIndex) 
+    by RequestId, StepIndex 
+| extend TotalDuration = EndTime - StartTime 
+| order by RequestId asc, StepIndex asc 
+| project 
+    TimeGenerated = StartTime,
+    LogicalServerName, 
+    RequestId, 
+    StepIndexs, 
+    RowCount, 
+    Command,
+    TotalDuration
+
+
+
+
 //KQL that tracks executions and even procedures, use the Session_id as the aggregation and the timegenerated as the sequence of SQL in the procedure 
 SynapseSqlPoolExecRequests
 | where Category == 'ExecRequests'
