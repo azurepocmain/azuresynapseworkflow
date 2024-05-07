@@ -64,7 +64,7 @@ left join sys.dm_pdw_exec_sessions pwsess
 on pwsess.request_id like   SUBSTRING(noneexecsqltxt.text, 41,PATINDEX('%set_distribute%', noneexecsqltxt.text )); 
 
 --STEP 4a: 
---To get the actual execution plan for the distributed query but check for specific objects if the above is not adquate. 
+--To get the actual execution plan for the distributed query but check for specific objects if the above is not adequate. 
 select text,* from sys.dm_pdw_nodes_exec_query_statistics_xml querystatistcs join   sys.dm_pdw_nodes_exec_sql_text sqltext ON querystatistcs.pdw_node_id=sqltext.pdw_node_id
 and querystatistcs.session_id=sqltext.session_id where text like '%Object_Name_or_Column_Name_Here%'
 
