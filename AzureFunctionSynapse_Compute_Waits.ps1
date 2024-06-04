@@ -76,14 +76,21 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 
 $SqlCmd.CommandText = "select  pwsess.Login_Name, pwsess.Login_Time, pwsess.status, pwsess.query_count, execreq.session_id,  execreq.request_id, pwsess.app_name, max(nodeexreq.wait_time) AS wait_time , max(nodeexreq.total_elapsed_time) AS total_elapsed_time, `
 max(nodeexreq.reads) AS reads, max(nodeexreq.writes) AS writes, max(nodeexreq.logical_reads) AS logical_reads,  max(nodeexreq.cpu_time) AS cpu_time, nodeexreq.wait_resource, nodeexreq.open_transaction_count, nodeexreq.blocking_session_id, `
-nodeexreq.wait_type, execreq.command, execplan.query_plan `
+nodeexreq.wait_type, execreq.command,     LEFT(execplan.query_plan, 16000) AS query_plan1,  `
+    CASE   `
+        WHEN LEN(execplan.query_plan) > 16000 THEN SUBSTRING(execplan.query_plan, 16001, 16000)  `
+        ELSE NULL  `
+    END AS query_plan2,  `
+    CASE   `
+        WHEN LEN(execplan.query_plan) > 32000 THEN SUBSTRING(execplan.query_plan, 32001, LEN(execplan.query_plan))  `
+        ELSE NULL  `
+    END AS query_plan3  `
 from sys.dm_pdw_nodes_exec_requests nodeexreq join  sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id `
 JOIN sys.dm_pdw_nodes_exec_text_query_plan execplan on execplan.session_id=nodeexreq.session_id AND execplan.pdw_node_id=nodeexreq.pdw_node_id `
 JOIN  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id `
 JOIN  sys.dm_pdw_exec_sessions pwsess ON  pwsess.session_id=execreq.session_id `
 where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' ) `
-group by nodeexreq.wait_type,  execreq.request_id, execreq.command, execplan.query_plan, pwsess.Login_Name, pwsess.Login_Time, pwsess.status, pwsess.query_count, execreq.session_id, pwsess.app_name, `
-nodeexreq.wait_resource, nodeexreq.open_transaction_count, nodeexreq.blocking_session_id;"
+group by nodeexreq.wait_type,  execreq.request_id, execreq.command, execplan.query_plan, pwsess.Login_Name, pwsess.Login_Time, pwsess.status, pwsess.query_count, execreq.session_id, pwsess.app_name, nodeexreq.wait_resource, nodeexreq.open_transaction_count, nodeexreq.blocking_session_id"
 
 $SqlCmd.Connection = $SqlConnection
 
@@ -131,7 +138,7 @@ $TimeStampField = ""
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object Login_Name, Login_Time, status, query_count, session_id, request_id, app_name, wait_time, total_elapsed_time, reads, writes, logical_reads, cpu_time, wait_resource, open_transaction_count, blocking_session_id, wait_type, command, query_plan |ConvertTo-Json 
+$SynapsePOC=$dataset | Select-Object Login_Name, Login_Time, status, query_count, session_id, request_id, app_name, wait_time, total_elapsed_time, reads, writes, logical_reads, cpu_time, wait_resource, open_transaction_count, blocking_session_id, wait_type, command, query_plan1, query_plan2, query_plan3  |ConvertTo-Json
 
 
 # Create the function to create the authorization signature
