@@ -89,7 +89,7 @@ from sys.dm_pdw_nodes_exec_requests nodeexreq join  sys.dm_pdw_sql_requests sqlr
 JOIN sys.dm_pdw_nodes_exec_text_query_plan execplan on execplan.session_id=nodeexreq.session_id AND execplan.pdw_node_id=nodeexreq.pdw_node_id `
 JOIN  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id `
 JOIN  sys.dm_pdw_exec_sessions pwsess ON  pwsess.session_id=execreq.session_id `
-where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' ) `
+where execreq.status NOT IN ('Cancelled', 'Completed', 'Failed' ) `
 group by nodeexreq.wait_type,  execreq.request_id, execreq.command, execplan.query_plan, pwsess.Login_Name, pwsess.Login_Time, pwsess.status, pwsess.query_count, execreq.session_id, pwsess.app_name, nodeexreq.wait_resource, nodeexreq.open_transaction_count, nodeexreq.blocking_session_id"
 
 $SqlCmd.Connection = $SqlConnection
