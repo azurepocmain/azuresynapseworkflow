@@ -107,7 +107,7 @@ $SqlCmd = New-Object System.Data.SqlClient.SqlCommand
 $SqlCmd.CommandText = "select execreq.request_id, max(nodeexreq.wait_time) AS wait_time , max(nodeexreq.total_elapsed_time) AS total_elapsed_time, `
 max(nodeexreq.reads) AS reads, max(nodeexreq.writes) AS writes, max(nodeexreq.logical_reads) AS logical_reads, nodeexreq.wait_type, execreq.command `
 from sys.dm_pdw_nodes_exec_requests nodeexreq join  sys.dm_pdw_sql_requests sqlrequest on nodeexreq.session_id=sqlrequest.spid AND nodeexreq.pdw_node_id=sqlrequest.pdw_node_id `
-join  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Canceled', 'Completed', 'Failed' ) `
+join  sys.dm_pdw_exec_requests execreq on execreq.request_id=sqlrequest.request_id where execreq.status NOT IN ('Cancelled', 'Completed', 'Failed' ) `
 group by nodeexreq.wait_type,  execreq.request_id, execreq.command ;"
 
 $SqlCmd.Connection = $SqlConnection
