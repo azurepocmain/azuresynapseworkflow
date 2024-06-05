@@ -32,14 +32,20 @@ try {
 
 ### Set-AzContext -SubscriptionId $env:azpocsub
 
-$SQLDW=@($env:AzureSynapse1);
+$SynapseSQLPool = $env:SynapseSQLPool1;
+$DBName = $env:SynapseDW1; 
+$LAWorkspaceName = $env:LAWorkspaceName;
+$LAWorkspaceKey =  $env:LAWorkspaceKey
 
 
 ##You can remove the below in Prod if you like after testing#####
 
-Write-Host $SQLDW
+Write-Host $SynapseSQLPool
 
-Write-Host $env:dwdb
+Write-Host $DBName
+
+
+##Write-Host $env:azpocsub
 
 
 ################################################
@@ -67,7 +73,7 @@ $accessToken = $tokenResponse.access_token
 
 $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
 
-$SqlConnection.ConnectionString = "Server=tcp:$SQLDW,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$env:dwdb;"
+$SqlConnection.ConnectionString = "Server=tcp:$SynapseSQLPool,1433;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Initial Catalog=$DBName;"
 
 $SqlConnection.AccessToken = $AccessToken
 
@@ -116,19 +122,20 @@ if ($SynapseWaits -ge 1)
 
 # Replace with your Workspace ID From Log Analytics
 
-$CustomerId = $env:workspaceidsynapse2
+$CustomerId = $LAWorkspaceName
 
  
 
 # Replace with your Primary Key From Log Analytics
 
-$SharedKey = $env:workspacekeysynapse2
+$SharedKey = $LAWorkspaceKey 
 
  
 
 # Specify the name of the record type that you'll be creating For This case it is Synapse Session info which will create a SynapseWaitsDW table in the workspace to query
+# Remember do not delete the table just recreate a new one or append to the current one or data will not load correctly to a prior deleted table. 
 
-$LogType = "SynapseWaitsDW"
+$LogType = "SynapseWaitsDW1"
 
 
 # You can use an optional field to specify the timestamp from the data. If the time field is not specified, Azure Monitor assumes the time is the message ingestion time
@@ -139,7 +146,7 @@ $TimeStampField = ""
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object session_id, Login_Name, request_time, request_id, acquire_time, Login_Time,  command, status, start_time, type, state, object_type, object_name    |ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object session_id, Login_Name, request_time, request_id, acquire_time, Login_Time,  command, status, start_time, type, state, object_type,@{Name="object_name";Expression={[string]$_.object_name}}   |ConvertTo-Json
 
 
 
@@ -149,33 +156,17 @@ $SynapsePOC=$dataset | Select-Object session_id, Login_Name, request_time, reque
 # Create the function to create the authorization signature
 
 Function Build-Signature ($customerId, $sharedKey, $date, $contentLength, $method, $contentType, $resource)
-
 {
-
 $xHeaders = "x-ms-date:" + $date
-
 $stringToHash = $method + "`n" + $contentLength + "`n" + $contentType + "`n" + $xHeaders + "`n" + $resource
-
- 
-
 $bytesToHash = [Text.Encoding]::UTF8.GetBytes($stringToHash)
-
 $keyBytes = [Convert]::FromBase64String($sharedKey)
-
- 
-
 $sha256 = New-Object System.Security.Cryptography.HMACSHA256
-
 $sha256.Key = $keyBytes
-
 $calculatedHash = $sha256.ComputeHash($bytesToHash)
-
 $encodedHash = [Convert]::ToBase64String($calculatedHash)
-
 $authorization = 'SharedKey {0}:{1}' -f $customerId,$encodedHash
-
 return $authorization
-
 }
 
 
@@ -183,7 +174,6 @@ return $authorization
 # Create the function to create and post the request
 
 Function Post-LogAnalyticsData($customerId, $sharedKey, $body, $logType)
-
 {
 $method = "POST"
 $contentType = "application/json"
@@ -199,18 +189,11 @@ $signature = Build-Signature `
 -contentType $contentType `
 -resource $resource
 $uri = "https://" + $customerId + ".ods.opinsights.azure.com" + $resource + "?api-version=2016-04-01"
- 
-
 $headers = @{
-
 "Authorization" = $signature;
-
 "Log-Type" = $logType;
-
 "x-ms-date" = $rfc1123date;
-
 "time-generated-field" = $TimeStampField;
-
 }
 
  
