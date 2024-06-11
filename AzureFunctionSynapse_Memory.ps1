@@ -129,7 +129,7 @@ $TimeStampField = ""
 
 ###Convert the data to JSon directly and select the specific objects needed from the above query, all objects are selected in this case, but you can omit any if needed###
 
-$SynapsePOC=$dataset | Select-Object request_id, dop, request_time,  grant_time, requested_memory_kb,   required_memory_kb,   used_memory_kb, max_used_memory_kb, ideal_memory_kb,  query_cost,  login_name  | ConvertTo-Json
+$SynapsePOC=$dataset | Select-Object request_id, dop, request_time,  grant_time, requested_memory_kb,   required_memory_kb,   used_memory_kb, max_used_memory_kb, ideal_memory_kb,  query_cost,  login_name, text  | ConvertTo-Json
 
 # Create the function to create the authorization signature
 
