@@ -82,7 +82,7 @@ on noneexecsqltxt.sql_handle=nomemgran.sql_handle `
 and noneexecsqltxt.session_id=nomemgran.session_id `
 left join sys.dm_pdw_exec_sessions pwsess `
 on pwsess.request_id like    SUBSTRING(noneexecsqltxt.text, PATINDEX('%QID%', noneexecsqltxt.text ), PATINDEX('%'', N%', noneexecsqltxt.text)- PATINDEX('%QID%', noneexecsqltxt.text )) `
-where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) "
+where nomemgran.request_time >=  DATEADD(minute,-5,getdate()) and pwsess.session_id <> session_id()  "
 
 $SqlCmd.Connection = $SqlConnection
 
