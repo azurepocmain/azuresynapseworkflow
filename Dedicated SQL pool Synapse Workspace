@@ -1,30 +1,34 @@
 
 // Get number of steps and time duration for SQL execution. 
 SynapseSqlPoolRequestSteps
-| where RequestId in ( "QID277103", "QID281937")// Alter QID277103 QID281937 and add all the Request ID associated to the session ID most likely.
-| where Category == 'RequestSteps'  
-| extend TimeGenerated = todatetime(TimeGenerated) 
+| where RequestId in ("QID277103")  // Filter by the specific request ID
+| where Category == 'RequestSteps'   // Ensure it's only showing request steps
+| extend TimeGenerated = todatetime(TimeGenerated)  // Ensure TimeGenerated is in datetime format
 | summarize 
-    StartTime = min(TimeGenerated), 
-    EndTime = max(TimeGenerated), 
+    StartTime = minif(StartTime, Status == "Running"),  // Get StartTime for Running status
+    EndTime = maxif(EndTime, Status == "Complete"),   // Get EndTime for Complete status
     LogicalServerName = max(LogicalServerName), 
     Command = max(Command), 
     RowCount = max(RowCount), 
     Category = max(Category), 
-    StepIndexs = max(StepIndex) 
-    by RequestId, StepIndex 
-| extend TotalDuration = EndTime - StartTime 
+    FinalStatus = min(Status),   // Get the final status (Running or Complete)
+    OperationType = max(OperationType)  // Capture OperationType
+    by RequestId, StepIndex
+| extend StatusFinal = iif(isnull(EndTime), "Running", "Completed")  // Set final status based on EndTime
+| extend TotalDurationMillis = iif(isnull(EndTime), datetime_diff('millisecond', now(), StartTime), datetime_diff('millisecond', EndTime, StartTime))  // Calculate duration in milliseconds
 | order by RequestId asc, StepIndex asc 
 | project 
-    TimeGenerated = StartTime,
+    TimeGenerated = StartTime,   // Use StartTime as TimeGenerated
     LogicalServerName, 
     RequestId, 
-    StepIndexs, 
+    StepIndex, 
     RowCount, 
     Command,
-    TotalDuration
-
-
+    Status = StatusFinal,  // Use the new status
+    OperationType,  // Add OperationType to the output
+    StartTime,      // Show start time
+    EndTime,        // Show end time (if completed)
+    TotalDurationMillis  // Duration in milliseconds
 
 
 //KQL that tracks executions and even procedures, use the Session_id as the aggregation and the timegenerated as the sequence of SQL in the procedure 
