@@ -1,14 +1,18 @@
 Remember, for each Session_id, you will have one or MORE Request_id. 
 The below three KQLs have been adjusted to provide that example for more efficient troubleshooting.
-Please note that both statements need to be executed as a group as the first statement provides the variable for the second statement. 
 
+Please note that both statements need to be executed as a group as the first statement provides the variable for the second statement. 
 // KQL Group 1: Get number of steps and time duration for SQL execution for all request_ids via the session ID which will stay persistent.
 // Execute together | Step 1: Extract the SessionId from the first query
 let RequestIdsFromSession = SynapseSqlPoolExecRequests
-    | where SessionId == "QID277103"  
-    | project RequestId;  // Extract RequestId
+    | where RequestId == "QID277103"  
+    | project SessionId  // Extract SessionId
+    | take 1;
+let SessionIDMetadata = SynapseSqlPoolExecRequests
+    | where SessionId == toscalar(RequestIdsFromSession)  ///Use toscalar() to convert table to scalar
+    | project RequestId;    
 SynapseSqlPoolRequestSteps
-| where RequestId in (RequestIdsFromSession)
+| where RequestId in (SessionIDMetadata)
 | where Category == 'RequestSteps'  
 | extend TimeGenerated = todatetime(TimeGenerated) 
 | summarize 
