@@ -1,3 +1,66 @@
+Remember, for each Session_id, you will have one or MORE Request_id. 
+The below three KQLs have been adjusted to provide that example for more efficient troubleshooting.
+Please note that both statements need to be executed as a group as the first statement provides the variable for the second statement. 
+
+// KQL Group 1: Get number of steps and time duration for SQL execution for all request_ids via the session ID which will stay persistent.
+// Execute together | Step 1: Extract the SessionId from the first query
+let RequestIdsFromSession = SynapseSqlPoolExecRequests
+    | where SessionId == "QID277103"  
+    | project RequestId;  // Extract RequestId
+SynapseSqlPoolRequestSteps
+| where RequestId in (RequestIdsFromSession)
+| where Category == 'RequestSteps'  
+| extend TimeGenerated = todatetime(TimeGenerated) 
+| summarize 
+    StartTime = minif(StartTime, Status == "Running"),  
+    EndTime = maxif(EndTime, Status == "Complete"),  
+    LogicalServerName = max(LogicalServerName), 
+    Command = max(Command), 
+    RowCount = max(RowCount), 
+    Category = max(Category), 
+    FinalStatus = min(Status),   
+    OperationType = max(OperationType)  
+    by RequestId, StepIndex
+| extend StatusFinal = iif(isnull(EndTime), "Running", "Completed")  
+| extend TotalDurationMillis = iif(isnull(EndTime), datetime_diff('millisecond', now(), StartTime), datetime_diff('millisecond', EndTime, StartTime))  // Calculate duration in milliseconds
+| order by RequestId asc, StepIndex asc 
+| project 
+    TimeGenerated = StartTime,  
+    LogicalServerName, 
+    RequestId, 
+    StepIndex, 
+    RowCount, 
+    Command,
+    Status = StatusFinal,  
+    OperationType,  
+    StartTime,      // Show start time
+    EndTime,        // Show end time (if completed)
+    TotalDurationMillis  // Duration in milliseconds
+
+
+// KQL Group 2: Gets the SynapseSqlPoolExecRequests for all request_ids via the session ID which will stay persistent. 
+//Execute together | Step 1: Extract the SessionId from the first query
+let SessionIDMetadata = SynapseSqlPoolExecRequests
+    | where RequestId == "QID277103"
+    | project SessionId
+    | take 1;  
+//Step 2: Use the extracted SessionId in a subsequent query
+SynapseSqlPoolExecRequests
+| where SessionId == toscalar(SessionIDMetadata)
+
+
+// KQL Group 3: Gets the SynapseSqlPoolExecRequests for all request_ids via the session ID which will stay persistent. 
+//Execute together | Step 1: Extract the SessionId from the first query
+let SessionIDMetadata = SynapseSqlPoolExecRequests
+    | where RequestId == "QID277103"
+    | project SessionId
+    | take 1;  
+//Step 2: Use the extracted SessionId in a subsequent query
+SynapseSqlPoolExecRequests
+| where SessionId == toscalar(SessionIDMetadata)
+
+
+
 
 // Get number of steps and time duration for SQL execution. 
 SynapseSqlPoolRequestSteps
