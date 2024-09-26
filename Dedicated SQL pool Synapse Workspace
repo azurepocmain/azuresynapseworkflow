@@ -5,11 +5,11 @@ Please note that both statements need to be executed as a group as the first sta
 // KQL Group 1: Get number of steps and time duration for SQL execution for all request_ids via the session ID which will stay persistent.
 // Execute together | Step 1: Extract the SessionId from the first query
 let RequestIdsFromSession = SynapseSqlPoolExecRequests
-    | where RequestId == "QID277103"  
+    | where RequestId == "QID396905"  
     | project SessionId  // Extract SessionId
     | take 1;
 let SessionIDMetadata = SynapseSqlPoolExecRequests
-    | where SessionId == toscalar(RequestIdsFromSession)  ///Use toscalar() to convert table to scalar
+    | where SessionId == toscalar(RequestIdsFromSession)  
     | project RequestId;    
 SynapseSqlPoolRequestSteps
 | where RequestId in (SessionIDMetadata)
